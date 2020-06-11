@@ -17,6 +17,7 @@ use RecursiveDirectoryIterator;
 use RecursiveIteratorIterator;
 use Toolkit\FsUtil\Exception\FileNotFoundException;
 use Toolkit\FsUtil\Exception\IOException;
+use Toolkit\FsUtil\Traits\FileSystemFuncTrait;
 use Toolkit\Stdlib\Arr;
 use Toolkit\Stdlib\OS;
 use Traversable;
@@ -38,6 +39,8 @@ use function substr;
  */
 abstract class FileSystem
 {
+    use FileSystemFuncTrait;
+
     /**
      * @param $path
      *
@@ -69,9 +72,9 @@ abstract class FileSystem
      */
     public static function isAbsolutePath(string $file): bool
     {
-        return strspn($file, '/\\', 0,
-                1) || (strlen($file) > 3 && ctype_alpha($file[0]) && $file[1] === ':' && strspn($file, '/\\', 2,
-                    1)) || null !== parse_url($file, PHP_URL_SCHEME);
+        return strspn($file, '/\\', 0, 1) ||
+            (strlen($file) > 3 && ctype_alpha($file[0]) && $file[1] === ':' && strspn($file, '/\\', 2, 1)) ||
+            null !== parse_url($file, PHP_URL_SCHEME);
     }
 
     /**
@@ -198,36 +201,6 @@ abstract class FileSystem
         }
 
         return is_readable($filename);
-    }
-
-    /**
-     * Creates a directory recursively.
-     *
-     * @param string|array|Traversable $dirs The directory path
-     * @param int                      $mode The directory mode
-     *
-     * @throws IOException On any directory creation failure
-     */
-    public static function mkdir($dirs, $mode = 0777): void
-    {
-        foreach (\Toolkit\Stdlib\Arr::toIterator($dirs) as $dir) {
-            if (is_dir($dir)) {
-                continue;
-            }
-
-            if (!@mkdir($dir, $mode, true) && !is_dir($dir)) {
-                $error = error_get_last();
-
-                if (!is_dir($dir)) {
-                    // The directory was not created by a concurrent process. Let's throw an exception with a developer friendly error message if we have one
-                    if ($error) {
-                        throw new IOException(sprintf('Failed to create "%s": %s.', $dir, $error['message']));
-                    }
-
-                    throw new IOException(sprintf('Failed to create "%s"', $dir));
-                }
-            }
-        }
     }
 
     /**
@@ -377,16 +350,16 @@ abstract class FileSystem
      * @from   web
      * @access public
      *
-     * @param string $file_path 文件路径
+     * @param string $filepath 文件路径
      *
      * @return int  返回值的取值范围为{0 <= x <= 15}，每个值表示的含义可由四位二进制数组合推出。
      *                  返回值在二进制计数法中，四位由高到低分别代表
      *                  可执行rename()函数权限 |可对文件追加内容权限 |可写入文件权限|可读取文件权限。
      */
-    public static function pathModeInfo(string $file_path): int
+    public static function pathModeInfo(string $filepath): int
     {
         /* 如果不存在，则不可读、不可写、不可改 */
-        if (!file_exists($file_path)) {
+        if (!file_exists($filepath)) {
             return false;
         }
 
@@ -394,12 +367,12 @@ abstract class FileSystem
 
         if (OS::isWindows()) {
             /* 测试文件 */
-            $test_file = $file_path . '/cf_test.txt';
+            $test_file = $filepath . '/cf_test.txt';
 
             /* 如果是目录 */
-            if (is_dir($file_path)) {
+            if (is_dir($filepath)) {
                 /* 检查目录是否可读 */
-                $dir = @opendir($file_path);
+                $dir = @opendir($filepath);
 
                 //如果目录打开失败，直接返回目录不可修改、不可写、不可读
                 if ($dir === false) {
@@ -449,9 +422,9 @@ abstract class FileSystem
                 @unlink($test_file);
 
                 /* 如果是文件 */
-            } elseif (is_file($file_path)) {
+            } elseif (is_file($filepath)) {
                 /* 以读方式打开 */
-                $fp = @fopen($file_path, 'rb');
+                $fp = @fopen($filepath, 'rb');
                 if ($fp) {
                     $mark ^= 1; //可读 001
                 }
@@ -459,7 +432,7 @@ abstract class FileSystem
                 @fclose($fp);
 
                 /* 试着修改文件 */
-                $fp = @fopen($file_path, 'ab+');
+                $fp = @fopen($filepath, 'ab+');
                 if ($fp && @fwrite($fp, '') !== false) {
                     $mark ^= 6; //可修改可写可读 111，不可修改可写可读011...
                 }
@@ -472,11 +445,11 @@ abstract class FileSystem
                 }
             }
         } else {
-            if (@is_readable($file_path)) {
+            if (@is_readable($filepath)) {
                 $mark ^= 1;
             }
 
-            if (@is_writable($file_path)) {
+            if (@is_writable($filepath)) {
                 $mark ^= 14;
             }
         }

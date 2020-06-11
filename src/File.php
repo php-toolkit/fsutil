@@ -16,6 +16,10 @@ use Toolkit\FsUtil\Exception\FileReadException;
 use Toolkit\FsUtil\Exception\FileSystemException;
 use Toolkit\FsUtil\Exception\FileWriteException;
 use Toolkit\FsUtil\Exception\IOException;
+use Toolkit\FsUtil\Parser\IniParser;
+use Toolkit\FsUtil\Parser\JsonParser;
+use Toolkit\FsUtil\Parser\YmlParser;
+use Toolkit\FsUtil\Traits\FileSnippetReadTrait;
 use function dirname;
 use function file_get_contents;
 use function file_put_contents;
@@ -33,7 +37,7 @@ use function strlen;
  */
 abstract class File extends FileSystem
 {
-    use FileReadTrait;
+    use FileSnippetReadTrait;
 
     public const FORMAT_JSON = 'json';
     public const FORMAT_PHP  = 'php';
@@ -127,6 +131,100 @@ abstract class File extends FileSystem
     public static function getStat($filename): array
     {
         return stat($filename);
+    }
+
+    /**********************************************************************************
+     * config file load
+     *********************************************************************************/
+
+    /**
+     * @param string $src 要解析的 文件 或 字符串内容。
+     * @param string $format
+     *
+     * @return array|bool
+     * @throws FileNotFoundException
+     */
+    public static function load(string $src, string $format = self::FORMAT_PHP)
+    {
+        $src = trim($src);
+
+        switch ($format) {
+            case self::FORMAT_YML:
+                $array = self::loadYml($src);
+                break;
+
+            case self::FORMAT_JSON:
+                $array = self::loadJson($src);
+                break;
+
+            case self::FORMAT_INI:
+                $array = self::loadIni($src);
+                break;
+
+            case self::FORMAT_PHP:
+            default:
+                $array = self::loadPhp($src);
+                break;
+        }
+
+        return $array;
+    }
+
+    /**
+     * load array data form file.
+     *
+     * @param string $file
+     * @param bool   $throwError
+     *
+     * @return array
+     * @throws FileNotFoundException
+     */
+    public static function loadPhp($file, $throwError = true): array
+    {
+        $ary = [];
+
+        if (is_file($file)) {
+            /** @noinspection PhpIncludeInspection */
+            $ary = require $file;
+
+            if (!is_array($ary)) {
+                $ary = [];
+            }
+        } elseif ($throwError) {
+            throw new FileNotFoundException("php file [$file] not exists.");
+        }
+
+        return $ary;
+    }
+
+    /**
+     * @param string $file
+     *
+     * @return array
+     */
+    public static function loadJson(string $file): array
+    {
+        return JsonParser::parse($file);
+    }
+
+    /**
+     * @param string $ini 要解析的 ini 文件名 或 字符串内容。
+     *
+     * @return array|bool
+     */
+    public static function loadIni(string $ini)
+    {
+        return IniParser::parse($ini);
+    }
+
+    /**
+     * @param string $yml 要解析的 yml 文件名 或 字符串内容。
+     *
+     * @return array|bool
+     */
+    public static function loadYml(string $yml)
+    {
+        return YmlParser::parse($yml);
     }
 
     /**********************************************************************************

@@ -68,12 +68,12 @@ class Directory extends FileSystem
     /**
      * 判断文件夹是否为空
      *
-     * @param $dir
+     * @param string $dir
      *
      * @return bool
      * @throws FileSystemException
      */
-    public static function isEmpty($dir): bool
+    public static function isEmpty(string $dir): bool
     {
         $handler = opendir($dir);
 
@@ -98,12 +98,12 @@ class Directory extends FileSystem
     /**
      * 查看一个目录中的所有文件和子目录
      *
-     * @param $path
+     * @param string $path
      *
      * @return array
      * @throws FileNotFoundException
      */
-    public static function ls($path): array
+    public static function ls(string $path): array
     {
         $list = [];
 
@@ -123,15 +123,15 @@ class Directory extends FileSystem
     /**
      * 只获得目录结构
      *
-     * @param       $path
+     * @param string $path
      * @param int   $pid
-     * @param int   $son
+     * @param bool  $son
      * @param array $list
      *
      * @return array
      * @throws FileNotFoundException
      */
-    public static function getList($path, $pid = 0, $son = 0, array $list = []): array
+    public static function getList(string $path, int $pid = 0, bool $son = false, array $list = []): array
     {
         $path = self::pathFormat($path);
 
@@ -169,7 +169,7 @@ class Directory extends FileSystem
      * @return array
      * @throws FileNotFoundException
      */
-    public static function getDirs($path, $loop = false, $parent = null, array $list = []): array
+    public static function getDirs(string $path, bool $loop = false, $parent = null, array $list = []): array
     {
         $path = self::pathFormat($path);
 
@@ -204,7 +204,7 @@ class Directory extends FileSystem
      * @return array
      * @throws FileNotFoundException
      */
-    public static function simpleInfo(string $dir, $ext = null, $recursive = false): array
+    public static function simpleInfo(string $dir, $ext = null, bool $recursive = false): array
     {
         $list = [];
         $dir  = self::pathFormat($dir);
@@ -227,6 +227,7 @@ class Directory extends FileSystem
                 $list[] = '/' . basename($file);
 
                 if ($recursive) {
+                    /** @noinspection SlowArrayOperationsInLoopInspection */
                     $list = array_merge($list, self::simpleInfo($file, $ext, $recursive));
                 }
             }
@@ -250,7 +251,7 @@ class Directory extends FileSystem
     public static function getFiles(
         string $path,
         $ext = null,
-        $recursive = false,
+        bool $recursive = false,
         $parent = null,
         array $list = []
     ): array {
@@ -281,16 +282,16 @@ class Directory extends FileSystem
     /**
      * 获得目录下的文件以及详细信息，可选择类型、是否遍历子文件夹
      *
-     * @param              $path      string 目标目录
+     * @param string   $path      string 目标目录
      * @param array|string $ext       array('css','html','php') css|html|php
-     * @param              $recursive int|bool 是否包含子目录
+     * @param bool     $recursive  是否包含子目录
      * @param array        $list
      *
      * @return array
      * @throws InvalidArgumentException
      * @throws FileNotFoundException
      */
-    public static function getFilesInfo($path, $ext = null, $recursive = 0, &$list = []): array
+    public static function getFilesInfo(string $path, $ext = null, bool $recursive = false, array &$list = []): array
     {
         $path = self::pathFormat($path);
 
@@ -322,13 +323,13 @@ class Directory extends FileSystem
     /**
      * 支持层级目录的创建
      *
-     * @param            $path
-     * @param int|string $mode
+     * @param string    $path
+     * @param int $mode
      * @param bool       $recursive
      *
      * @return bool
      */
-    public static function create($path, $mode = 0775, $recursive = true): bool
+    public static function create(string $path, int $mode = 0775, bool $recursive = true): bool
     {
         return (is_dir($path) || !(!@mkdir($path, $mode, $recursive) && !is_dir($path))) && is_writable($path);
     }
@@ -342,16 +343,16 @@ class Directory extends FileSystem
      * @return bool
      * @throws FileNotFoundException
      */
-    public static function copy($oldDir, $newDir): bool
+    public static function copy(string $oldDir, string $newDir): bool
     {
         $oldDir = self::pathFormat($oldDir);
         $newDir = self::pathFormat($newDir);
 
         if (!is_dir($oldDir)) {
-            throw new FileNotFoundException('复制失败：' . $oldDir . ' 不存在！');
+            throw new FileNotFoundException('copy failed：' . $oldDir . ' does not exist！');
         }
 
-        $newDir = self::create($newDir);
+        self::create($newDir);
 
         foreach (glob($oldDir . '*') as $v) {
             $newFile = $newDir . basename($v);//文件
@@ -375,12 +376,12 @@ class Directory extends FileSystem
     /**
      * 删除目录及里面的文件
      *
-     * @param          $path
+     * @param string    $path
      * @param boolean  $delSelf 默认最后删掉自己
      *
      * @return bool
      */
-    public static function delete($path, $delSelf = true): bool
+    public static function delete(string $path, bool $delSelf = true): bool
     {
         $dirPath = self::pathFormat($path);
 

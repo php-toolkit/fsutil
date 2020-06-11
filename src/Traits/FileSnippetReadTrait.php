@@ -7,119 +7,24 @@
  * Time: 10:35
  */
 
-namespace Toolkit\FsUtil;
+namespace Toolkit\FsUtil\Traits;
 
 use Exception;
 use SplFileObject;
 use Throwable;
 use Toolkit\FsUtil\Exception\FileNotFoundException;
-use Toolkit\FsUtil\Exception\FileReadException;
 use Toolkit\FsUtil\Exception\FileSystemException;
-use Toolkit\FsUtil\Parser\IniParser;
-use Toolkit\FsUtil\Parser\JsonParser;
-use Toolkit\FsUtil\Parser\YmlParser;
 use function array_slice;
 use function assert;
-use function class_exists;
 use function count;
-use function is_array;
 
 /**
- * Class Read
+ * Class FileSnippetReadTrait
  *
  * @package Toolkit\FsUtil
  */
-trait FileReadTrait
+trait FileSnippetReadTrait
 {
-    /**
-     * @param string $src 要解析的 文件 或 字符串内容。
-     * @param string $format
-     *
-     * @return array|bool
-     * @throws FileNotFoundException
-     */
-    public static function load($src, $format = self::FORMAT_PHP)
-    {
-        $src = trim($src);
-
-        switch ($format) {
-            case self::FORMAT_YML:
-                $array = self::loadYml($src);
-                break;
-
-            case self::FORMAT_JSON:
-                $array = self::loadJson($src);
-                break;
-
-            case self::FORMAT_INI:
-                $array = self::loadIni($src);
-                break;
-
-            case self::FORMAT_PHP:
-            default:
-                $array = self::loadPhp($src);
-                break;
-        }
-
-        return $array;
-    }
-
-    /**
-     * load array data form file.
-     *
-     * @param string $file
-     * @param bool   $throwError
-     *
-     * @return array
-     * @throws FileNotFoundException
-     */
-    public static function loadPhp($file, $throwError = true): array
-    {
-        $ary = [];
-
-        if (is_file($file)) {
-            $ary = require $file;
-
-            if (!is_array($ary)) {
-                $ary = [];
-            }
-        } elseif ($throwError) {
-            throw new FileNotFoundException("php file [$file] not exists.");
-        }
-
-        return $ary;
-    }
-
-    /**
-     * @param string $file
-     *
-     * @return array
-     */
-    public static function loadJson($file): array
-    {
-        return JsonParser::parse($file);
-    }
-
-    /**
-     * @param string $ini 要解析的 ini 文件名 或 字符串内容。
-     *
-     * @return array|bool
-     */
-    public static function loadIni($ini)
-    {
-        return IniParser::parse($ini);
-    }
-
-    /**
-     * @param string $yml 要解析的 yml 文件名 或 字符串内容。
-     *
-     * @return array|bool
-     */
-    public static function loadYml($yml)
-    {
-        return YmlParser::parse($yml);
-    }
-
     /**
      * @param           $file
      * @param bool|true $filter
@@ -160,38 +65,18 @@ trait FileReadTrait
             return $content;
         }
 
-        // 判断php版本（因为要用到SplFileObject，PHP>=5.1.0）
-        if (class_exists('SplFileObject', false)) {
-            $count = $endLine - $startLine;
+        $count = $endLine - $startLine;
 
-            try {
-                $objFile = new SplFileObject($fileName, $mode);
-                $objFile->seek($startLine - 1); // 转到第N行, seek方法参数从0开始计数
+        try {
+            $objFile = new SplFileObject($fileName, $mode);
+            $objFile->seek($startLine - 1); // 转到第N行, seek方法参数从0开始计数
 
-                for ($i = 0; $i <= $count; ++$i) {
-                    $content[] = $objFile->current(); // current()获取当前行内容
-                    $objFile->next(); // 下一行
-                }
-            } catch (Throwable $e) {
-                throw new FileSystemException("Error on read the file '{$fileName}'. ERR: " . $e->getMessage());
+            for ($i = 0; $i <= $count; ++$i) {
+                $content[] = $objFile->current(); // current()获取当前行内容
+                $objFile->next(); // 下一行
             }
-
-        } else { // PHP<5.1
-            if (!$fp = fopen($fileName, $mode)) {
-                throw new FileSystemException('can not open the file:' . $fileName);
-            }
-
-            // 移动指针 跳过前$startLine行
-            for ($i = 1; $i < $startLine; ++$i) {
-                fgets($fp);
-            }
-
-            // 读取文件行内容
-            for (; $i <= $endLine; ++$i) {
-                $content[] = fgets($fp);
-            }
-
-            fclose($fp);
+        } catch (Throwable $e) {
+            throw new FileSystemException("Error on read the file '{$fileName}'. ERR: " . $e->getMessage());
         }
 
         return $content;
