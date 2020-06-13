@@ -18,7 +18,7 @@ use function is_file;
  *
  * @package Toolkit\FsUtil\Parser
  */
-abstract class BaseParser
+abstract class AbstractParser
 {
     public const EXTEND_KEY    = 'extend';
     public const IMPORT_KEY    = 'import';
@@ -35,22 +35,26 @@ abstract class BaseParser
      * @return array
      */
     abstract protected static function doParse(
-        $string,
-        $enhancement = false,
+        string $string,
+        bool $enhancement = false,
         callable $pathHandler = null,
         string $fileDir = ''
     ): array;
 
     /**
-     * @param               $string
+     * @param string        $string
      * @param bool          $enhancement
      * @param callable|null $pathHandler
      * @param string        $fileDir
      *
      * @return array
      */
-    public static function parse($string, $enhancement = false, callable $pathHandler = null, $fileDir = ''): array
-    {
+    public static function parse(
+        string $string,
+        bool $enhancement = false,
+        callable $pathHandler = null,
+        string $fileDir = ''
+    ): array {
         if (is_file($string)) {
             return self::parseFile($string, $enhancement, $pathHandler, $fileDir);
         }
@@ -59,7 +63,7 @@ abstract class BaseParser
     }
 
     /**
-     * @param               $file
+     * @param string        $file
      * @param bool          $enhancement
      * @param callable|null $pathHandler
      * @param string        $fileDir
@@ -67,16 +71,20 @@ abstract class BaseParser
      * @return array
      * @throws InvalidArgumentException
      */
-    public static function parseFile($file, $enhancement = false, callable $pathHandler = null, $fileDir = ''): array
-    {
+    public static function parseFile(
+        string $file,
+        bool $enhancement = false,
+        callable $pathHandler = null,
+        $fileDir = ''
+    ): array {
         if (!is_file($file)) {
             throw new InvalidArgumentException("Target file [$file] not exists");
         }
 
-        $fileDir = $fileDir ?: dirname($file);
-        $data    = file_get_contents($file);
+        $fileDir  = $fileDir ?: dirname($file);
+        $contents = file_get_contents($file);
 
-        return static::doParse($data, $enhancement, $pathHandler, $fileDir);
+        return static::doParse($contents, $enhancement, $pathHandler, $fileDir);
     }
 
     /**
@@ -88,11 +96,36 @@ abstract class BaseParser
      * @return array
      */
     public static function parseString(
-        $string,
-        $enhancement = false,
+        string $string,
+        bool $enhancement = false,
         callable $pathHandler = null,
-        $fileDir = ''
+        string $fileDir = ''
     ): array {
         return static::doParse($string, $enhancement, $pathHandler, $fileDir);
+    }
+
+    /**
+     * @param string        $value
+     * @param string        $fileDir
+     * @param callable|null $pathHandler
+     *
+     * @return string
+     */
+    protected static function getImportFile(string $value, string $fileDir, $pathHandler = null): string
+    {
+        // eg: 'import#other.yaml'
+        $importFile = trim(substr($value, 7));
+
+        // if needed custom handle $importFile path. e.g: Maybe it uses custom alias path
+        if ($pathHandler && is_callable($pathHandler)) {
+            $importFile = $pathHandler($importFile);
+        }
+
+        // if $importFile is not exists AND $importFile is not a absolute path AND have $parentFile
+        if ($fileDir && !file_exists($importFile) && $importFile[0] !== '/') {
+            $importFile = $fileDir . '/' . trim($importFile, './');
+        }
+
+        return $importFile;
     }
 }

@@ -10,20 +10,15 @@
 
 namespace Toolkit\FsUtil;
 
-use FilesystemIterator;
 use InvalidArgumentException;
 use RecursiveCallbackFilterIterator;
 use RecursiveDirectoryIterator;
 use RecursiveIteratorIterator;
 use Toolkit\FsUtil\Exception\FileNotFoundException;
-use Toolkit\FsUtil\Exception\IOException;
 use Toolkit\FsUtil\Traits\FileSystemFuncTrait;
-use Toolkit\Stdlib\Arr;
 use Toolkit\Stdlib\OS;
-use Traversable;
 use function count;
 use function file_exists;
-use function function_exists;
 use function is_array;
 use function is_string;
 use function preg_match;
@@ -117,7 +112,7 @@ abstract class FileSystem
      *
      * @return array|string
      */
-    public static function exists(string $file, $type = null)
+    public static function exists(string $file, string $type = null)
     {
         if (!$type) {
             return file_exists($file);
@@ -156,102 +151,6 @@ abstract class FileSystem
 
             if (preg_match("/\.($ext)$/i", $file)) {
                 throw new InvalidArgumentException("{$file} extension is not match: {$ext}");
-            }
-        }
-    }
-
-    /**
-     * Renames a file or a directory.
-     *
-     * @from Symfony-filesystem
-     *
-     * @param string $origin    The origin filename or directory
-     * @param string $target    The new filename or directory
-     * @param bool   $overwrite Whether to overwrite the target if it already exists
-     *
-     * @throws IOException When target file or directory already exists
-     * @throws IOException When origin cannot be renamed
-     */
-    public static function rename(string $origin, string $target, bool $overwrite = false): void
-    {
-        // we check that target does not exist
-        if (!$overwrite && static::isReadable($target)) {
-            throw new IOException(sprintf('Cannot rename because the target "%s" already exists.', $target));
-        }
-
-        if (true !== rename($origin, $target)) {
-            throw new IOException(sprintf('Cannot rename "%s" to "%s".', $origin, $target));
-        }
-    }
-
-    /**
-     * Tells whether a file exists and is readable.
-     *
-     * @from Symfony-filesystem
-     *
-     * @param string $filename Path to the file
-     *
-     * @return bool
-     * @throws IOException When windows path is longer than 258 characters
-     */
-    public static function isReadable(string $filename): bool
-    {
-        if ('\\' === DIRECTORY_SEPARATOR && strlen($filename) > 258) {
-            throw new IOException('Could not check if file is readable because path length exceeds 258 characters.');
-        }
-
-        return is_readable($filename);
-    }
-
-    /**
-     * Change mode for an array of files or directories.
-     *
-     * @from Symfony-filesystem
-     *
-     * @param string|array|Traversable $files     A filename, an array of files, or a \Traversable instance to change mode
-     * @param int                      $mode      The new mode (octal)
-     * @param int                      $umask     The mode mask (octal)
-     * @param bool                     $recursive Whether change the mod recursively or not
-     *
-     * @throws IOException When the change fail
-     */
-    public static function chmod($files, $mode, $umask = 0000, $recursive = false): void
-    {
-        foreach (Arr::toIterator($files) as $file) {
-            if (true !== @chmod($file, $mode & ~$umask)) {
-                throw new IOException(sprintf('Failed to chmod file "%s".', $file));
-            }
-
-            if ($recursive && is_dir($file) && !is_link($file)) {
-                self::chmod(new FilesystemIterator($file), $mode, $umask, true);
-            }
-        }
-    }
-
-    /**
-     * Change the owner of an array of files or directories.
-     *
-     * @from Symfony-filesystem
-     *
-     * @param string|array|Traversable $files     A filename, an array of files, or a \Traversable instance to change owner
-     * @param string                   $user      The new owner user name
-     * @param bool                     $recursive Whether change the owner recursively or not
-     *
-     * @throws IOException When the change fail
-     */
-    public static function chown($files, string $user, $recursive = false): void
-    {
-        foreach (Arr::toIterator($files) as $file) {
-            if ($recursive && is_dir($file) && !is_link($file)) {
-                self::chown(new FilesystemIterator($file), $user, true);
-            }
-
-            if (is_link($file) && function_exists('lchown')) {
-                if (true !== lchown($file, $user)) {
-                    throw new IOException(sprintf('Failed to chown file "%s".', $file));
-                }
-            } elseif (true !== chown($file, $user)) {
-                throw new IOException(sprintf('Failed to chown file "%s".', $file));
             }
         }
     }

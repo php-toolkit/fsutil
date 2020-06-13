@@ -18,7 +18,7 @@ use Toolkit\FsUtil\Exception\FileWriteException;
 use Toolkit\FsUtil\Exception\IOException;
 use Toolkit\FsUtil\Parser\IniParser;
 use Toolkit\FsUtil\Parser\JsonParser;
-use Toolkit\FsUtil\Parser\YmlParser;
+use Toolkit\FsUtil\Parser\YamlParser;
 use Toolkit\FsUtil\Traits\FileSnippetReadTrait;
 use function dirname;
 use function file_get_contents;
@@ -39,11 +39,11 @@ abstract class File extends FileSystem
 {
     use FileSnippetReadTrait;
 
-    public const FORMAT_JSON = 'json';
     public const FORMAT_PHP  = 'php';
+    public const FORMAT_JSON = 'json';
     public const FORMAT_INI  = 'ini';
     public const FORMAT_YML  = 'yml';
-    public const FORMAT_YAML = 'yml';
+    public const FORMAT_YAML = 'yaml';
 
     /**
      * 获得文件名称
@@ -147,10 +147,10 @@ abstract class File extends FileSystem
     public static function load(string $src, string $format = self::FORMAT_PHP)
     {
         $src = trim($src);
-
         switch ($format) {
             case self::FORMAT_YML:
-                $array = self::loadYml($src);
+            case self::FORMAT_YAML:
+                $array = self::loadYaml($src);
                 break;
 
             case self::FORMAT_JSON:
@@ -222,9 +222,9 @@ abstract class File extends FileSystem
      *
      * @return array|bool
      */
-    public static function loadYml(string $yml)
+    public static function loadYaml(string $yml)
     {
-        return YmlParser::parse($yml);
+        return YamlParser::parse($yml);
     }
 
     /**********************************************************************************

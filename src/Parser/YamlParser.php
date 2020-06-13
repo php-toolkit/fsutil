@@ -19,7 +19,6 @@ use function is_callable;
 use function is_file;
 use function is_string;
 use function strpos;
-use function substr;
 use function trim;
 
 /**
@@ -27,8 +26,11 @@ use function trim;
  *
  * @package Toolkit\FsUtil\Parser
  */
-class YmlParser extends BaseParser
+class YamlParser extends AbstractParser
 {
+    public const YML  = 'yml';
+    public const YAML = 'yaml';
+
     /**
      * parse YAML
      *
@@ -42,17 +44,13 @@ class YmlParser extends BaseParser
      * @throws UnexpectedValueException
      */
     protected static function doParse(
-        $string,
-        $enhancement = false,
+        string $string,
+        bool $enhancement = false,
         callable $pathHandler = null,
         string $fileDir = ''
     ): array {
         if (!$string) {
             return [];
-        }
-
-        if (!is_string($string)) {
-            throw new InvalidArgumentException('param type error! must is string.');
         }
 
         if (!class_exists(Parser::class)) {
@@ -98,17 +96,7 @@ class YmlParser extends BaseParser
                 }
 
                 if (0 === strpos($item, self::IMPORT_KEY . '#')) {
-                    $importFile = trim(substr($item, 6));
-
-                    // if needed custom handle $importFile path. e.g: Maybe it uses custom alias path
-                    if ($pathHandler && is_callable($pathHandler)) {
-                        $importFile = $pathHandler($importFile);
-                    }
-
-                    // if $importFile is not exists AND $importFile is not a absolute path AND have $parentFile
-                    if ($fileDir && !file_exists($importFile) && $importFile[0] !== '/') {
-                        $importFile = $fileDir . '/' . trim($importFile, './');
-                    }
+                    $importFile = self::getImportFile($item, $fileDir, $pathHandler);
 
                     // $importFile is file
                     if (is_file($importFile)) {

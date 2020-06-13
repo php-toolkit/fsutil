@@ -9,7 +9,7 @@
 namespace Toolkit\FsUtil\Parser;
 
 use InvalidArgumentException;
-use Toolkit\StrUtil\JsonHelper;
+use Toolkit\Stdlib\Helper\JsonHelper;
 use UnexpectedValueException;
 use function array_merge;
 use function file_exists;
@@ -18,7 +18,6 @@ use function is_callable;
 use function is_file;
 use function is_string;
 use function strpos;
-use function substr;
 use function trim;
 
 /**
@@ -26,8 +25,10 @@ use function trim;
  *
  * @package Toolkit\FsUtil\Parser
  */
-class JsonParser extends BaseParser
+class JsonParser extends AbstractParser
 {
+    public const JSON = 'json';
+
     /**
      * parse JSON
      *
@@ -41,8 +42,8 @@ class JsonParser extends BaseParser
      * @throws UnexpectedValueException
      */
     protected static function doParse(
-        $string,
-        $enhancement = false,
+        string $string,
+        bool $enhancement = false,
         callable $pathHandler = null,
         string $fileDir = ''
     ): array {
@@ -91,23 +92,15 @@ class JsonParser extends BaseParser
                     continue;
                 }
 
+                // eg: db = import#../db.json
                 if (0 === strpos($item, self::IMPORT_KEY . '#')) {
-                    $importFile = trim(substr($item, 6));
-
-                    // if needed custom handle $importFile path. e.g: Maybe it uses custom alias path
-                    if ($pathHandler && is_callable($pathHandler)) {
-                        $importFile = $pathHandler($importFile);
-                    }
-
-                    // if $importFile is not exists AND $importFile is not a absolute path AND have $parentFile
-                    if ($fileDir && !file_exists($importFile) && $importFile[0] !== '/') {
-                        $importFile = $fileDir . '/' . trim($importFile, './');
-                    }
+                    $importFile = self::getImportFile($item, $fileDir, $pathHandler);
 
                     // $importFile is file
                     if (is_file($importFile)) {
-                        $data        = file_get_contents($importFile);
-                        $array[$key] = JsonHelper::parse($data);
+                        $json = file_get_contents($importFile);
+                        // parse sub file
+                        $array[$key] = JsonHelper::decode($json, true);
                     } else {
                         throw new UnexpectedValueException("needed imported file [$importFile] don't exists!");
                     }

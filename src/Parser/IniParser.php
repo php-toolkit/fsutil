@@ -18,7 +18,6 @@ use function is_file;
 use function is_string;
 use function parse_ini_string;
 use function strpos;
-use function substr;
 use function trim;
 
 /**
@@ -26,8 +25,10 @@ use function trim;
  *
  * @package Toolkit\FsUtil\Parser
  */
-class IniParser extends BaseParser
+class IniParser extends AbstractParser
 {
+    public const INI = 'ini';
+
     /**
      * parse INI
      *
@@ -41,8 +42,8 @@ class IniParser extends BaseParser
      * @throws UnexpectedValueException
      */
     protected static function doParse(
-        $string,
-        $enhancement = false,
+        string $string,
+        bool $enhancement = false,
         callable $pathHandler = null,
         string $fileDir = ''
     ): array {
@@ -50,12 +51,7 @@ class IniParser extends BaseParser
             return [];
         }
 
-        if (!is_string($string)) {
-            throw new InvalidArgumentException('parameter type error! must is string.');
-        }
-
-        /** @var array $array */
-        $array = parse_ini_string(trim($string), true);
+        $array = (array)parse_ini_string(trim($string), true);
 
         /*
          * Parse special keywords
@@ -65,7 +61,7 @@ class IniParser extends BaseParser
          * [cache]
          * debug = reference#debug
          */
-        if ($enhancement === true) {
+        if ($enhancement) {
             if (isset($array[self::EXTEND_KEY]) && ($extendFile = $array[self::EXTEND_KEY])) {
                 // if needed custom handle $importFile path. e.g: Maybe it uses custom alias path
                 if ($pathHandler && is_callable($pathHandler)) {
@@ -79,8 +75,9 @@ class IniParser extends BaseParser
 
                 // $importFile is file
                 if (is_file($extendFile)) {
-                    $data  = file_get_contents($extendFile);
-                    $array = array_merge(parse_ini_string(trim($data), true), $array);
+                    $contents = file_get_contents($extendFile);
+                    // merge data
+                    $array = array_merge(parse_ini_string(trim($contents), true), $array);
                 } else {
                     throw new UnexpectedValueException("needed extended file [$extendFile] don't exists!");
                 }
@@ -92,22 +89,13 @@ class IniParser extends BaseParser
                 }
 
                 if (0 === strpos($item, self::IMPORT_KEY . '#')) {
-                    $importFile = trim(substr($item, 7));
-
-                    // if needed custom handle $importFile path. e.g: Maybe it uses custom alias path
-                    if ($pathHandler && is_callable($pathHandler)) {
-                        $importFile = $pathHandler($importFile);
-                    }
-
-                    // if $importFile is not exists AND $importFile is not a absolute path AND have $parentFile
-                    if ($fileDir && !file_exists($importFile) && $importFile[0] !== '/') {
-                        $importFile = $fileDir . '/' . trim($importFile, './');
-                    }
+                    $importFile = self::getImportFile($item, $fileDir, $pathHandler);
 
                     // $importFile is file
                     if (is_file($importFile)) {
-                        $data        = file_get_contents($importFile);
-                        $array[$key] = parse_ini_string(trim($data), true);
+                        $contents = file_get_contents($importFile);
+
+                        $array[$key] = parse_ini_string(trim($contents), true);
                     } else {
                         throw new UnexpectedValueException("needed imported file [$importFile] don't exists!");
                     }
