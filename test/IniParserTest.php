@@ -6,7 +6,7 @@
  * Time: 20:25
  */
 
-namespace Toolkit\FsUtil\ParserTest;
+namespace Toolkit\FsUtilTest;
 
 use PHPUnit\Framework\TestCase;
 use Toolkit\FsUtil\Parser\IniParser;

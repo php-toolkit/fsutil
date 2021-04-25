@@ -27,7 +27,7 @@ trait FileSystemFuncTrait
      * @param string   $dest
      * @param resource $context
      */
-    public static function copy(string $source, string $dest, $context = null): void
+    public static function copyFile(string $source, string $dest, $context = null): void
     {
         if (false === copy($source, $dest, $context)) {
             throw new FileSystemException("copy file content failure");

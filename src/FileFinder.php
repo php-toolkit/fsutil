@@ -317,12 +317,12 @@ final class FileFinder implements IteratorAggregate, Countable
      *
      * @return FileFinder
      */
-    public function ignoreDotFiles($ignoreDotFiles): self
+    public function ignoreDotFiles(bool $ignoreDotFiles = true): self
     {
         if ($ignoreDotFiles) {
-            $this->ignore |= static::IGNORE_DOT_FILES;
+            $this->ignore |= self::IGNORE_DOT_FILES;
         } else {
-            $this->ignore &= ~static::IGNORE_DOT_FILES;
+            $this->ignore &= ~self::IGNORE_DOT_FILES;
         }
         return $this;
     }
