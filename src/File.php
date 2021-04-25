@@ -19,6 +19,7 @@ use Toolkit\FsUtil\Parser\IniParser;
 use Toolkit\FsUtil\Parser\JsonParser;
 use Toolkit\FsUtil\Parser\YamlParser;
 use Toolkit\FsUtil\Traits\FileSnippetReadTrait;
+use function basename;
 use function dirname;
 use function file_get_contents;
 use function file_put_contents;
@@ -28,6 +29,7 @@ use function is_array;
 use function is_string;
 use function stat;
 use function strlen;
+use function strstr;
 
 /**
  * Class File
@@ -56,7 +58,7 @@ abstract class File extends FileSystem
      *
      * @return string
      */
-    public static function getName($file, $clearExt = false): string
+    public static function getName(string $file, $clearExt = false): string
     {
         $filename = basename(trim($file));
 
@@ -66,12 +68,12 @@ abstract class File extends FileSystem
     /**
      * 获得文件扩展名、后缀名
      *
-     * @param      $filename
+     * @param string $filename
      * @param bool $clearPoint 是否带点
      *
      * @return string
      */
-    public static function getSuffix($filename, $clearPoint = false): string
+    public static function getSuffix(string $filename, $clearPoint = false): string
     {
         $suffix = strrchr($filename, '.');
 
@@ -98,7 +100,7 @@ abstract class File extends FileSystem
      *
      * @return string eg: image/gif
      */
-    public static function mimeType($file): string
+    public static function mimeType(string $file): string
     {
         return finfo_file(finfo_open(FILEINFO_MIME_TYPE), $file);
     }
@@ -182,7 +184,7 @@ abstract class File extends FileSystem
      * @return array
      * @throws FileNotFoundException
      */
-    public static function loadPhp($file, $throwError = true): array
+    public static function loadPhp(string $file, $throwError = true): array
     {
         $ary = [];
 

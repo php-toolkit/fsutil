@@ -61,7 +61,7 @@ class Directory extends FileSystem
      * @return RecursiveIteratorIterator
      * @throws LogicException
      */
-    public static function getRecursiveIterator($srcDir, callable $filter): RecursiveIteratorIterator
+    public static function getRecursiveIterator(string $srcDir, callable $filter): RecursiveIteratorIterator
     {
         return self::getIterator($srcDir, $filter);
     }
