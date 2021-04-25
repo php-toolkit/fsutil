@@ -1,4 +1,11 @@
-<?php
+<?php declare(strict_types=1);
+/**
+ * This file is part of toolkit/fsutil.
+ *
+ * @author   https://github.com/inhere
+ * @link     https://github.com/toolkit/fsutil
+ * @license  MIT
+ */
 
 namespace Toolkit\FsUtil\Traits;
 
@@ -30,7 +37,7 @@ trait FileSystemFuncTrait
     public static function copyFile(string $source, string $dest, $context = null): void
     {
         if (false === copy($source, $dest, $context)) {
-            throw new FileSystemException("copy file content failure");
+            throw new FileSystemException('copy file content failure');
         }
     }
 

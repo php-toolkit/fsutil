@@ -1,11 +1,10 @@
-<?php
+<?php declare(strict_types=1);
 /**
- * Created by sublime 3.
- * Auth: Inhere
- * Date: 15-1-14
- * Time: 10:35
- * AbstractFileSystem.php.php
- * Uesd: 主要功能是 hi
+ * This file is part of toolkit/fsutil.
+ *
+ * @author   https://github.com/inhere
+ * @link     https://github.com/toolkit/fsutil
+ * @license  MIT
  */
 
 namespace Toolkit\FsUtil;
@@ -320,7 +319,7 @@ abstract class FileSystem
 
                 @unlink($test_file);
 
-                /* 如果是文件 */
+            /* 如果是文件 */
             } elseif (is_file($filepath)) {
                 /* 以读方式打开 */
                 $fp = @fopen($filepath, 'rb');

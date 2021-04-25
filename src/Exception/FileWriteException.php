@@ -1,9 +1,10 @@
-<?php
+<?php declare(strict_types=1);
 /**
- * Created by PhpStorm.
- * User: Inhere
- * Date: 2018/1/29 0029
- * Time: 23:03
+ * This file is part of toolkit/fsutil.
+ *
+ * @author   https://github.com/inhere
+ * @link     https://github.com/toolkit/fsutil
+ * @license  MIT
  */
 
 namespace Toolkit\FsUtil\Exception;
@@ -15,5 +16,4 @@ namespace Toolkit\FsUtil\Exception;
  */
 class FileWriteException extends FileSystemException
 {
-
 }

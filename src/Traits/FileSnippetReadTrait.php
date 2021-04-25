@@ -1,10 +1,10 @@
-<?php
+<?php declare(strict_types=1);
 /**
- * Created by sublime 3.
- * Auth: Inhere
- * Date: 15-1-14
- * Name: File.php
- * Time: 10:35
+ * This file is part of toolkit/fsutil.
+ *
+ * @author   https://github.com/inhere
+ * @link     https://github.com/toolkit/fsutil
+ * @license  MIT
  */
 
 namespace Toolkit\FsUtil\Traits;

@@ -1,9 +1,10 @@
-<?php
+<?php declare(strict_types=1);
 /**
- * Created by sublime 3.
- * Auth: Inhere
- * Date: 15-1-14
- * Time: 10:35
+ * This file is part of toolkit/fsutil.
+ *
+ * @author   https://github.com/inhere
+ * @link     https://github.com/toolkit/fsutil
+ * @license  MIT
  */
 
 namespace Toolkit\FsUtil;
@@ -82,7 +83,6 @@ class Directory extends FileSystem
         }
 
         while (($file = readdir($handler)) !== false) {
-
             if ($file !== '.' && $file !== '..') {
                 closedir($handler);
 
@@ -222,7 +222,7 @@ class Directory extends FileSystem
                 //basename — 返回路径中的 文件名部分
                 $list[] = basename($file);
 
-                // is directory
+            // is directory
             } else {
                 $list[] = '/' . basename($file);
 
@@ -270,7 +270,6 @@ class Directory extends FileSystem
             // 匹配文件 如果没有传入$ext 则全部遍历，传入了则按传入的类型来查找
             if (is_file($v) && (!$ext || preg_match("/\.($ext)$/i", $v))) {
                 $list[] = $parent . $relatePath;
-
             } elseif ($recursive) {
                 $list = self::getFiles($v, $ext, $recursive, $relatePath . '/', $list);
             }
@@ -311,7 +310,7 @@ class Directory extends FileSystem
             if (is_file($file) && (!$ext || preg_match("/\.($ext)$/i", $file))) {
                 $list[$id] = File::info($file);
 
-                //是否遍历子目录
+            //是否遍历子目录
             } elseif ($recursive) {
                 $list = self::getFilesInfo($file, $ext, $recursive, $list);
             }

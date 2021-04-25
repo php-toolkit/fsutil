@@ -1,9 +1,10 @@
-<?php
+<?php declare(strict_types=1);
 /**
- * Created by PhpStorm.
- * User: inhere
- * Date: 2017/6/17
- * Time: 上午11:43
+ * This file is part of toolkit/fsutil.
+ *
+ * @author   https://github.com/inhere
+ * @link     https://github.com/toolkit/fsutil
+ * @license  MIT
  */
 
 namespace Toolkit\FsUtil\Parser;
@@ -21,7 +22,9 @@ use function is_file;
 abstract class AbstractParser
 {
     public const EXTEND_KEY    = 'extend';
+
     public const IMPORT_KEY    = 'import';
+
     public const REFERENCE_KEY = 'reference';
 
     /**

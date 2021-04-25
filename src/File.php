@@ -1,11 +1,10 @@
-<?php
+<?php declare(strict_types=1);
 /**
- * Created by sublime 3.
- * Auth: Inhere
- * Date: 15-1-14
- * Name: File.php
- * Time: 10:35
- * Uesd: 主要功能是 文件相关信息获取
+ * This file is part of toolkit/fsutil.
+ *
+ * @author   https://github.com/inhere
+ * @link     https://github.com/toolkit/fsutil
+ * @license  MIT
  */
 
 namespace Toolkit\FsUtil;
@@ -40,9 +39,13 @@ abstract class File extends FileSystem
     use FileSnippetReadTrait;
 
     public const FORMAT_PHP  = 'php';
+
     public const FORMAT_JSON = 'json';
+
     public const FORMAT_INI  = 'ini';
+
     public const FORMAT_YML  = 'yml';
+
     public const FORMAT_YAML = 'yaml';
 
     /**

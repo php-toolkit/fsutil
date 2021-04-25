@@ -1,9 +1,10 @@
-<?php
+<?php declare(strict_types=1);
 /**
- * Created by PhpStorm.
- * User: Inhere
- * Date: 2018/1/20 0020
- * Time: 21:57
+ * This file is part of toolkit/fsutil.
+ *
+ * @author   https://github.com/inhere
+ * @link     https://github.com/toolkit/fsutil
+ * @license  MIT
  */
 
 namespace Toolkit\FsUtil;
@@ -57,8 +58,11 @@ use function stream_get_meta_data;
 final class FileFinder implements IteratorAggregate, Countable
 {
     public const ONLY_FILE        = 1;
+
     public const ONLY_DIR         = 2;
+
     public const IGNORE_VCS_FILES = 1;
+
     public const IGNORE_DOT_FILES = 2;
 
     /** @var array */
@@ -470,12 +474,15 @@ final class FileFinder implements IteratorAggregate, Countable
             $flags |= RecursiveDirectoryIterator::FOLLOW_SYMLINKS;
         }
 
-        $iterator = new class ($dir, $flags) extends RecursiveDirectoryIterator
-        {
+        $iterator = new class($dir, $flags) extends RecursiveDirectoryIterator {
             private $rootPath;
+
             private $subPath;
+
             private $rewindable;
+
             private $directorySeparator = '/';
+
             private $ignoreUnreadableDirs;
 
             public function __construct(string $path, int $flags, bool $ignoreUnreadableDirs = false)
@@ -565,9 +572,9 @@ final class FileFinder implements IteratorAggregate, Countable
 
         // exclude directories
         if ($this->excludes) {
-            $iterator = new class ($iterator, $this->excludes) extends FilterIterator implements RecursiveIterator
-            {
+            $iterator = new class($iterator, $this->excludes) extends FilterIterator implements RecursiveIterator {
                 private $excludes;
+
                 private $iterator;
 
                 public function __construct(RecursiveIterator $iterator, array $excludes)
@@ -605,8 +612,7 @@ final class FileFinder implements IteratorAggregate, Countable
 
         // mode: find files or dirs
         if ($this->mode) {
-            $iterator = new class ($iterator, $this->mode) extends FilterIterator
-            {
+            $iterator = new class($iterator, $this->mode) extends FilterIterator {
                 private $mode;
 
                 public function __construct(Iterator $iterator, int $mode)
@@ -632,9 +638,9 @@ final class FileFinder implements IteratorAggregate, Countable
         }
 
         if ($this->names || $this->notNames) {
-            $iterator = new class ($iterator, $this->names, $this->notNames) extends FilterIterator
-            {
+            $iterator = new class($iterator, $this->names, $this->notNames) extends FilterIterator {
                 private $names;
+
                 private $notNames;
 
                 public function __construct(Iterator $iterator, array $names, array $notNames)
@@ -670,8 +676,7 @@ final class FileFinder implements IteratorAggregate, Countable
         }
 
         if ($this->filters) {
-            $iterator = new class ($iterator, $this->filters) extends FilterIterator
-            {
+            $iterator = new class($iterator, $this->filters) extends FilterIterator {
                 private $filters;
 
                 public function __construct(Iterator $iterator, array $filters)
@@ -695,9 +700,9 @@ final class FileFinder implements IteratorAggregate, Countable
         }
 
         if ($this->paths || $this->notPaths) {
-            $iterator = new class ($iterator, $this->paths, $this->notPaths) extends FilterIterator
-            {
+            $iterator = new class($iterator, $this->paths, $this->notPaths) extends FilterIterator {
                 private $paths;
+
                 private $notPaths;
 
                 public function __construct(Iterator $iterator, array $paths, array $notPaths)

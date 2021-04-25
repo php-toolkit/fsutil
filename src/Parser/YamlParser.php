@@ -1,9 +1,10 @@
-<?php
+<?php declare(strict_types=1);
 /**
- * Created by PhpStorm.
- * User: inhere
- * Date: 2017/6/17
- * Time: 上午11:41
+ * This file is part of toolkit/fsutil.
+ *
+ * @author   https://github.com/inhere
+ * @link     https://github.com/toolkit/fsutil
+ * @license  MIT
  */
 
 namespace Toolkit\FsUtil\Parser;
@@ -29,6 +30,7 @@ use function trim;
 class YamlParser extends AbstractParser
 {
     public const YML  = 'yml';
+
     public const YAML = 'yaml';
 
     /**
@@ -107,10 +109,8 @@ class YamlParser extends AbstractParser
                     }
                 }
             }
-
         }
 
         return $array;
     }
-
 }

@@ -1,9 +1,10 @@
-<?php
+<?php declare(strict_types=1);
 /**
- * Created by PhpStorm.
- * User: inhere
- * Date: 2017/6/17
- * Time: 上午11:41
+ * This file is part of toolkit/fsutil.
+ *
+ * @author   https://github.com/inhere
+ * @link     https://github.com/toolkit/fsutil
+ * @license  MIT
  */
 
 namespace Toolkit\FsUtil\Parser;
@@ -106,7 +107,6 @@ class JsonParser extends AbstractParser
                     }
                 }
             }
-
         }
 
         return $array;
