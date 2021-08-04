@@ -13,14 +13,21 @@ use FilesystemIterator;
 use Toolkit\FsUtil\Exception\FileSystemException;
 use Toolkit\FsUtil\Exception\IOException;
 use Toolkit\Stdlib\Arr;
+use Toolkit\Stdlib\OS;
 use Traversable;
+use function array_filter;
+use function array_pop;
 use function copy;
 use function error_get_last;
 use function function_exists;
+use function implode;
 use function is_dir;
 use function mkdir;
+use function realpath;
 use function rmdir;
+use function str_replace;
 use function strlen;
+use const DIRECTORY_SEPARATOR;
 
 /**
  * Trait FileSystemFuncTrait
@@ -146,6 +153,42 @@ trait FileSystemFuncTrait
                 throw new IOException(sprintf('Failed to chown file "%s".', $file));
             }
         }
+    }
+
+    /**
+     * @param string $path
+     *
+     * @return string
+     * @see realpath()
+     * @link https://www.php.net/manual/zh/function.realpath.php#84012
+     */
+    public static function realpath(string $path): string
+    {
+        $path  = str_replace(['/', '\\'], DIRECTORY_SEPARATOR, $path);
+        $parts = array_filter(explode(DIRECTORY_SEPARATOR, $path), 'strlen');
+        if (!$parts) {
+            return '';
+        }
+
+        // ~: is user home dir in *nix OS
+        if ($parts[0] === '~' && false === OS::isWindows()) {
+            $parts[0] = OS::getUserHomeDir();
+        }
+
+        $absolutes = [];
+        foreach ($parts as $part) {
+            if ('.' === $part) {
+                continue;
+            }
+
+            if ('..' === $part) {
+                array_pop($absolutes);
+            } else {
+                $absolutes[] = $part;
+            }
+        }
+
+        return implode(DIRECTORY_SEPARATOR, $absolutes);
     }
 
     /**********************************************************************************

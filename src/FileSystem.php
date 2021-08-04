@@ -258,7 +258,7 @@ abstract class FileSystem
     {
         /* 如果不存在，则不可读、不可写、不可改 */
         if (!file_exists($filepath)) {
-            return false;
+            return 0;
         }
 
         $mark = 0;
