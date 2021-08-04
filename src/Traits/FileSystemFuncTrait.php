@@ -20,6 +20,7 @@ use function array_pop;
 use function array_values;
 use function copy;
 use function error_get_last;
+use function explode;
 use function function_exists;
 use function implode;
 use function is_dir;
@@ -171,9 +172,15 @@ trait FileSystemFuncTrait
             return '';
         }
 
-        // ~: is user home dir in *nix OS
-        if ($parts[0] === '~' && false === OS::isWindows()) {
-            $parts[0] = OS::getUserHomeDir();
+        $start  = '';
+        $isUnix = DIRECTORY_SEPARATOR === '/';
+        if ($isUnix) {
+            // ~: is user home dir in *nix OS
+            if ($parts[0] === '~') {
+                $parts[0] = OS::getUserHomeDir();
+            } else {
+                $start = '/';
+            }
         }
 
         $absolutes = [];
@@ -189,7 +196,7 @@ trait FileSystemFuncTrait
             }
         }
 
-        return implode(DIRECTORY_SEPARATOR, $absolutes);
+        return $start . implode(DIRECTORY_SEPARATOR, $absolutes);
     }
 
     /**********************************************************************************
