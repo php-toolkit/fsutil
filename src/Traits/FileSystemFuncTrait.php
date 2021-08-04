@@ -17,6 +17,7 @@ use Toolkit\Stdlib\OS;
 use Traversable;
 use function array_filter;
 use function array_pop;
+use function array_values;
 use function copy;
 use function error_get_last;
 use function function_exists;
@@ -166,7 +167,7 @@ trait FileSystemFuncTrait
     {
         $path  = str_replace(['/', '\\'], DIRECTORY_SEPARATOR, $path);
         $parts = array_filter(explode(DIRECTORY_SEPARATOR, $path), 'strlen');
-        if (!$parts) {
+        if (!$parts = array_values($parts)) {
             return '';
         }
 
