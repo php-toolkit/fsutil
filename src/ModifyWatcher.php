@@ -15,7 +15,7 @@ use function in_array;
 use function json_encode;
 
 /**
- * Class FilesWatcher - Check Dir's files modified by md5_file()
+ * Class FilesWatcher - Check Directory files modified by md5_file()
  *
  * @package Inhere\Server\Components
  */
@@ -121,7 +121,7 @@ final class ModifyWatcher
     }
 
     /**
-     * @param bool $ignoreDotDirs
+     * @param bool|mixed $ignoreDotDirs
      *
      * @return ModifyWatcher
      */
@@ -133,7 +133,7 @@ final class ModifyWatcher
     }
 
     /**
-     * @param bool $ignoreDotFiles
+     * @param bool|mixed $ignoreDotFiles
      *
      * @return ModifyWatcher
      */
@@ -269,7 +269,7 @@ final class ModifyWatcher
             // 检测文件
             foreach ($this->notNames as $name) {
                 if (preg_match('#' . $name . '#', $name)) {
-                    continue;
+                    continue 2;
                 }
             }
 

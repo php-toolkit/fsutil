@@ -12,14 +12,13 @@ namespace Toolkit\FsUtil;
 use InvalidArgumentException;
 use Toolkit\FsUtil\Exception\FileNotFoundException;
 use Toolkit\FsUtil\Exception\FileReadException;
-use Toolkit\FsUtil\Exception\FileSystemException;
 use Toolkit\FsUtil\Exception\FileWriteException;
 use Toolkit\FsUtil\Exception\IOException;
 use Toolkit\FsUtil\Parser\IniParser;
 use Toolkit\FsUtil\Parser\JsonParser;
 use Toolkit\FsUtil\Parser\YamlParser;
+use Toolkit\FsUtil\Traits\FileOperateTrait;
 use Toolkit\FsUtil\Traits\FileSnippetReadTrait;
-use function basename;
 use function dirname;
 use function file_get_contents;
 use function file_put_contents;
@@ -27,116 +26,27 @@ use function function_exists;
 use function in_array;
 use function is_array;
 use function is_string;
-use function stat;
 use function strlen;
-use function strstr;
 
 /**
  * Class File
  *
  * @package Toolkit\FsUtil
  */
-abstract class File extends FileSystem
+class File extends FileSystem
 {
+    use FileOperateTrait;
     use FileSnippetReadTrait;
 
-    public const FORMAT_PHP  = 'php';
+    public const FORMAT_PHP = 'php';
 
     public const FORMAT_JSON = 'json';
 
-    public const FORMAT_INI  = 'ini';
+    public const FORMAT_INI = 'ini';
 
-    public const FORMAT_YML  = 'yml';
+    public const FORMAT_YML = 'yml';
 
     public const FORMAT_YAML = 'yaml';
-
-    /**
-     * 获得文件名称
-     *
-     * @param string $file
-     * @param bool   $clearExt 是否去掉文件名中的后缀，仅保留名字
-     *
-     * @return string
-     */
-    public static function getName(string $file, $clearExt = false): string
-    {
-        $filename = basename(trim($file));
-
-        return $clearExt ? strstr($filename, '.', true) : $filename;
-    }
-
-    /**
-     * 获得文件扩展名、后缀名
-     *
-     * @param string $filename
-     * @param bool $clearPoint 是否带点
-     *
-     * @return string
-     */
-    public static function getSuffix(string $filename, $clearPoint = false): string
-    {
-        $suffix = strrchr($filename, '.');
-
-        return (bool)$clearPoint ? trim($suffix, '.') : $suffix;
-    }
-
-    /**
-     * 获得文件扩展名、后缀名
-     *
-     * @param      $path
-     * @param bool $clearPoint 是否带点
-     *
-     * @return string
-     */
-    public static function getExtension($path, $clearPoint = false): string
-    {
-        $ext = pathinfo($path, PATHINFO_EXTENSION);
-
-        return $clearPoint ? $ext : '.' . $ext;
-    }
-
-    /**
-     * @param string $file
-     *
-     * @return string eg: image/gif
-     */
-    public static function mimeType(string $file): string
-    {
-        return finfo_file(finfo_open(FILEINFO_MIME_TYPE), $file);
-    }
-
-    /**
-     * @param string $filename
-     * @param bool   $check
-     *
-     * @return array
-     * @throws FileNotFoundException
-     * @throws InvalidArgumentException
-     */
-    public static function info(string $filename, $check = true): array
-    {
-        $check && self::check($filename);
-
-        return [
-            'name'            => basename($filename), //文件名
-            'type'            => filetype($filename), //类型
-            'size'            => (filesize($filename) / 1000) . ' Kb', //大小
-            'is_write'        => is_writable($filename) ? 'true' : 'false', //可写
-            'is_read'         => is_readable($filename) ? 'true' : 'false',//可读
-            'update_time'     => filectime($filename), //修改时间
-            'last_visit_time' => fileatime($filename), //文件的上次访问时间
-        ];
-    }
-
-    /**
-     * @param $filename
-     *
-     * @return array
-     */
-    public static function getStat($filename): array
-    {
-        return stat($filename);
-    }
 
     /**********************************************************************************
      * config file load
@@ -146,10 +56,10 @@ abstract class File extends FileSystem
      * @param string $src 要解析的 文件 或 字符串内容。
      * @param string $format
      *
-     * @return array|bool
+     * @return array
      * @throws FileNotFoundException
      */
-    public static function load(string $src, string $format = self::FORMAT_PHP)
+    public static function load(string $src, string $format = self::FORMAT_PHP): array
     {
         $src = trim($src);
         switch ($format) {
@@ -184,7 +94,7 @@ abstract class File extends FileSystem
      * @return array
      * @throws FileNotFoundException
      */
-    public static function loadPhp(string $file, $throwError = true): array
+    public static function loadPhp(string $file, bool $throwError = true): array
     {
         $ary = [];
 
@@ -215,9 +125,9 @@ abstract class File extends FileSystem
     /**
      * @param string $ini 要解析的 ini 文件名 或 字符串内容。
      *
-     * @return array|bool
+     * @return array
      */
-    public static function loadIni(string $ini)
+    public static function loadIni(string $ini): array
     {
         return IniParser::parse($ini);
     }
@@ -225,9 +135,9 @@ abstract class File extends FileSystem
     /**
      * @param string $yml 要解析的 yml 文件名 或 字符串内容。
      *
-     * @return array|bool
+     * @return array
      */
-    public static function loadYaml(string $yml)
+    public static function loadYaml(string $yml): array
     {
         return YamlParser::parse($yml);
     }
@@ -253,7 +163,6 @@ abstract class File extends FileSystem
         int $maxlen = null
     ): string {
         $content = file_get_contents($filename, $useIncludePath, $context, $offset, $maxlen);
-
         if ($content === false) {
             throw new FileWriteException('read contents error from file: ' . $filename);
         }
@@ -274,7 +183,6 @@ abstract class File extends FileSystem
     public static function putContents(string $filename, $data, int $flags = 0, $context = null): int
     {
         $number = file_put_contents($filename, $data, $flags, $context);
-
         if ($number === false) {
             throw new FileWriteException('write contents error to file: ' . $filename);
         }
@@ -347,15 +255,15 @@ abstract class File extends FileSystem
      * ********************** 创建多级目录和多个文件 **********************
      * 结合上两个函数
      *
-     * @param $fileData - 数组：要创建的多个文件名组成,含文件的完整路径
-     * @param $append   - 是否以追加的方式写入数据 默认false
-     * @param $mode     =0777 - 权限，默认0775
-     *                  eg: $fileData = array(
-     *                  'file_name'   => 'content',
-     *                  'case.html'   => 'content' ,
-     *                  );
+     * @param array $fileData - 数组：要创建的多个文件名组成,含文件的完整路径
+     * @param bool  $append   - 是否以追加的方式写入数据 默认false
+     * @param int   $mode     =0777 - 权限，默认0775
+     *                        eg: $fileData = array(
+     *                        'file_name'   => 'content',
+     *                        'case.html'   => 'content' ,
+     *                        );
      **/
-    public static function createAndWrite(array $fileData = [], $append = false, $mode = 0664): void
+    public static function createAndWrite(array $fileData = [], bool $append = false, int $mode = 0664): void
     {
         foreach ($fileData as $file => $content) {
             //检查目录是否存在，不存在就先创建（多级）目录
@@ -380,29 +288,28 @@ abstract class File extends FileSystem
      * @param null|resource $streamContext
      * @param int           $curlTimeout
      *
-     * @return bool|mixed|string
+     * @return bool|string
      * @throws FileNotFoundException
      * @throws FileReadException
      */
     public static function getContentsV2(
         string $file,
-        $useIncludePath = false,
+        bool $useIncludePath = false,
         $streamContext = null,
         int $curlTimeout = 5
     ) {
         $isUrl = preg_match('/^https?:\/\//', $file);
-
         if (null === $streamContext && $isUrl) {
             $streamContext = @stream_context_create(['http' => ['timeout' => $curlTimeout]]);
         }
 
         if ($isUrl && in_array(ini_get('allow_url_fopen'), ['On', 'on', '1'], true)) {
             if (!file_exists($file)) {
-                throw new FileNotFoundException("File [{$file}] don't exists!");
+                throw new FileNotFoundException("File [$file] don't exists!");
             }
 
             if (!is_readable($file)) {
-                throw new FileReadException("File [{$file}] is not readable！");
+                throw new FileReadException("File [$file] is not readable！");
             }
 
             return @file_get_contents($file, $useIncludePath, $streamContext);
@@ -415,7 +322,7 @@ abstract class File extends FileSystem
             curl_setopt($curl, CURLOPT_URL, $file);
             curl_setopt($curl, CURLOPT_CONNECTTIMEOUT, 5);
             curl_setopt($curl, CURLOPT_TIMEOUT, $curlTimeout);
-            //            curl_setopt($curl, CURLOPT_SSL_VERIFYPEER, 0);
+            //  curl_setopt($curl, CURLOPT_SSL_VERIFYPEER, 0);
 
             if (null !== $streamContext) {
                 $opts = stream_context_get_options($streamContext);
@@ -437,57 +344,6 @@ abstract class File extends FileSystem
         }
 
         return false;
-    }
-
-    /**
-     * @param string $file
-     * @param string $target
-     *
-     * @throws FileNotFoundException
-     * @throws FileSystemException
-     * @throws IOException
-     */
-    public static function move(string $file, string $target): void
-    {
-        Directory::mkdir(dirname($target));
-
-        if (static::copy($file, $target)) {
-            unlink($file);
-        }
-    }
-
-    /**
-     * @param $filename
-     *
-     * @return bool
-     * @throws InvalidArgumentException
-     * @throws FileNotFoundException
-     */
-    public static function delete($filename): bool
-    {
-        return self::check($filename) && unlink($filename);
-    }
-
-    /**
-     * @param      $source
-     * @param      $destination
-     * @param null $streamContext
-     *
-     * @return bool|int
-     * @throws FileSystemException
-     * @throws FileNotFoundException
-     */
-    public static function copy($source, $destination, $streamContext = null)
-    {
-        if (null === $streamContext && !preg_match('/^https?:\/\//', $source)) {
-            if (!is_file($source)) {
-                throw new FileSystemException("Source file don't exists. File: $source");
-            }
-
-            return copy($source, $destination);
-        }
-
-        return @file_put_contents($destination, self::getContentsV2($source, false, $streamContext));
     }
 
     /**
@@ -563,7 +419,8 @@ abstract class File extends FileSystem
                 $whitespace = preg_replace('{(?:\r\n|\r|\n)}', "\n", $whitespace);
                 // trim leading spaces
                 $whitespace = preg_replace('{\n +}', "\n", $whitespace);
-                $output     .= $whitespace;
+                // append
+                $output .= $whitespace;
             } else {
                 $output .= $token[1];
             }

@@ -58,11 +58,9 @@ use function stream_get_meta_data;
 final class FileFinder implements IteratorAggregate, Countable
 {
     public const ONLY_FILE        = 1;
-
     public const ONLY_DIR         = 2;
 
     public const IGNORE_VCS_FILES = 1;
-
     public const IGNORE_DOT_FILES = 2;
 
     /** @var array */
@@ -305,12 +303,12 @@ final class FileFinder implements IteratorAggregate, Countable
      *
      * @return self
      */
-    public function ignoreVCS($ignoreVCS): self
+    public function ignoreVCS(bool $ignoreVCS): self
     {
         if ($ignoreVCS) {
-            $this->ignore |= static::IGNORE_VCS_FILES;
+            $this->ignore |= self::IGNORE_VCS_FILES;
         } else {
-            $this->ignore &= ~static::IGNORE_VCS_FILES;
+            $this->ignore &= ~self::IGNORE_VCS_FILES;
         }
 
         return $this;
@@ -332,7 +330,7 @@ final class FileFinder implements IteratorAggregate, Countable
     }
 
     /**
-     * @param bool $followLinks
+     * @param bool|mixed $followLinks
      *
      * @return FileFinder
      */
@@ -476,13 +474,10 @@ final class FileFinder implements IteratorAggregate, Countable
 
         $iterator = new class($dir, $flags) extends RecursiveDirectoryIterator {
             private $rootPath;
-
             private $subPath;
-
             private $rewindable;
 
             private $directorySeparator = '/';
-
             private $ignoreUnreadableDirs;
 
             public function __construct(string $path, int $flags, bool $ignoreUnreadableDirs = false)
@@ -500,7 +495,7 @@ final class FileFinder implements IteratorAggregate, Countable
                 }
             }
 
-            public function current()
+            public function current(): SplFileInfo
             {
                 if (null === $subPathname = $this->subPath) {
                     $subPathname = $this->subPath = (string)$this->getSubPath();
@@ -640,7 +635,6 @@ final class FileFinder implements IteratorAggregate, Countable
         if ($this->names || $this->notNames) {
             $iterator = new class($iterator, $this->names, $this->notNames) extends FilterIterator {
                 private $names;
-
                 private $notNames;
 
                 public function __construct(Iterator $iterator, array $names, array $notNames)

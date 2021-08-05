@@ -9,14 +9,16 @@
 
 namespace Toolkit\FsUtil\Traits;
 
-use Exception;
 use SplFileObject;
 use Throwable;
-use Toolkit\FsUtil\Exception\FileNotFoundException;
 use Toolkit\FsUtil\Exception\FileSystemException;
 use function array_slice;
+use function array_unshift;
 use function assert;
 use function count;
+use function fclose;
+use function feof;
+use function fseek;
 
 /**
  * Class FileSnippetReadTrait
@@ -26,13 +28,12 @@ use function count;
 trait FileSnippetReadTrait
 {
     /**
-     * @param           $file
-     * @param bool|true $filter
+     * @param string $file
+     * @param bool   $filter
      *
-     * @return array|string
-     * @throws FileNotFoundException
+     * @return array
      */
-    public static function readAllLine($file, $filter = true)
+    public static function readAllLine(string $file, bool $filter = true): array
     {
         $contents = self::getContentsV2($file);
 
@@ -42,11 +43,11 @@ trait FileSnippetReadTrait
 
         $array = explode(PHP_EOL, $contents);
 
-        return (bool)$filter ? array_filter($array) : $array;
+        return $filter ? array_filter($array) : $array;
     }
 
     /**
-     * getLines 获取文件一定范围内的内容
+     * getLines 获取文件一定范围内的内容（支持大文件读取）
      *
      * @param string  $fileName  含完整路径的文件
      * @param integer $startLine 开始行数 默认第1行
@@ -56,7 +57,7 @@ trait FileSnippetReadTrait
      * @return array  返回内容
      * @throws FileSystemException
      */
-    public static function readLines(string $fileName, int $startLine = 1, int $endLine = 10, $mode = 'rb'): array
+    public static function readLines(string $fileName, int $startLine = 1, int $endLine = 10, string $mode = 'rb'): array
     {
         $content   = [];
         $startLine = $startLine <= 0 ? 1 : $startLine;
@@ -76,7 +77,7 @@ trait FileSnippetReadTrait
                 $objFile->next(); // 下一行
             }
         } catch (Throwable $e) {
-            throw new FileSystemException("Error on read the file '{$fileName}'. ERR: " . $e->getMessage());
+            throw new FileSystemException("Error on read the file '$fileName'. ERR: " . $e->getMessage());
         }
 
         return $content;
@@ -85,24 +86,24 @@ trait FileSnippetReadTrait
     /**
      * symmetry  得到当前行对称上下几($lineNum)行的内容
      *
-     * @param string  $fileName 含完整路径的文件
+     * @param string  $filepath 含完整路径的文件
      * @param integer $current  [当前行数]
      * @param integer $lineNum  [获取行数] = $lineNum*2+1
      *
      * @return array
      * @throws FileSystemException
      */
-    public static function readSymmetry($fileName, $current = 1, $lineNum = 3): array
+    public static function readSymmetry(string $filepath, int $current = 1, int $lineNum = 3): array
     {
         $startLine = $current - $lineNum;
         $endLine   = $current + $lineNum;
 
-        if ((int)$current < ($lineNum + 1)) {
+        if ($current < ($lineNum + 1)) {
             $startLine = 1;
             $endLine   = 9;
         }
 
-        return self::readLines($fileName, $startLine, $endLine);
+        return self::readLines($filepath, $startLine, $endLine);
     }
 
     /**
@@ -157,7 +158,7 @@ trait FileSnippetReadTrait
         while (count($lines) <= $n) {
             try {
                 fseek($fp, -$pos, SEEK_END);
-            } catch (Exception $e) {
+            } catch (Throwable $e) {
                 fclose($fp);
                 break;
             }

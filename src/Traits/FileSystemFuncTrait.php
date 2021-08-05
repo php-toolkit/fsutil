@@ -116,7 +116,7 @@ trait FileSystemFuncTrait
      *
      * @throws IOException When the change fail
      */
-    public static function chmod($files, $mode, $umask = 0000, $recursive = false): void
+    public static function chmod($files, int $mode, int $umask = 0000, bool $recursive = false): void
     {
         foreach (Arr::toIterator($files) as $file) {
             if (true !== @chmod($file, $mode & ~$umask)) {
@@ -140,7 +140,7 @@ trait FileSystemFuncTrait
      *
      * @throws IOException When the change fail
      */
-    public static function chown($files, string $user, $recursive = false): void
+    public static function chown($files, string $user, bool $recursive = false): void
     {
         foreach (Arr::toIterator($files) as $file) {
             if ($recursive && is_dir($file) && !is_link($file)) {

@@ -36,7 +36,7 @@ abstract class FileSystem
     use FileSystemFuncTrait;
 
     /**
-     * @param $path
+     * @param string $path
      *
      * @return bool
      */
@@ -90,7 +90,7 @@ abstract class FileSystem
      *
      * @return string
      */
-    public function clearPharPath(string $path): string
+    public static function clearPharPath(string $path): string
     {
         if (strpos($path, 'phar://') === 0) {
             $path = (string)substr($path, 7);
@@ -106,19 +106,18 @@ abstract class FileSystem
     /**
      * 检查文件/夹/链接是否存在
      *
-     * @param string      $file 要检查的目标
-     * @param null|string $type
+     * @param string $file 要检查的目标
+     * @param string $type
      *
-     * @return array|string
+     * @return bool
      */
-    public static function exists(string $file, string $type = null)
+    public static function exists(string $file, string $type = ''): bool
     {
         if (!$type) {
             return file_exists($file);
         }
 
         $ret = false;
-
         if ($type === 'file') {
             $ret = is_file($file);
         } elseif ($type === 'dir') {
@@ -140,7 +139,7 @@ abstract class FileSystem
     public static function check(string $file, $ext = null): void
     {
         if (!$file || !file_exists($file)) {
-            throw new FileNotFoundException("File {$file} not exists！");
+            throw new FileNotFoundException("File $file not exists！");
         }
 
         if ($ext) {
@@ -149,7 +148,7 @@ abstract class FileSystem
             }
 
             if (preg_match("/\.($ext)$/i", $file)) {
-                throw new InvalidArgumentException("{$file} extension is not match: {$ext}");
+                throw new InvalidArgumentException("$file extension is not match: $ext");
             }
         }
     }
@@ -174,12 +173,12 @@ abstract class FileSystem
     }
 
     /**
-     * @param     $path
-     * @param int $mode
+     * @param string $path
+     * @param int    $mode
      *
      * @return bool
      */
-    public static function chmodDir(string $path, $mode = 0664): bool
+    public static function chmodDir(string $path, int $mode = 0664): bool
     {
         if (!is_dir($path)) {
             return @chmod($path, $mode);
@@ -204,8 +203,7 @@ abstract class FileSystem
         }
 
         closedir($dh);
-
-        return @chmod($path, $mode) ? true : false;
+        return @chmod($path, $mode);
     }
 
     /**
@@ -220,8 +218,7 @@ abstract class FileSystem
         $suffix = ['B', 'KB', 'MB', 'GB', 'TB', 'PB', 'EB', 'ZB', 'YB'];
         $class  = min((int)log($bytes, $base), count($suffix) - 1);
 
-        //echo $bytes . '<br />';
-
+        // echo $bytes . '<br />';
         // pow($base, $class)
         return sprintf('%1.2f', $bytes / ($base ** $class)) . ' ' . $suffix[$class];
     }
@@ -319,7 +316,7 @@ abstract class FileSystem
 
                 @unlink($test_file);
 
-            /* 如果是文件 */
+                /* 如果是文件 */
             } elseif (is_file($filepath)) {
                 /* 以读方式打开 */
                 $fp = @fopen($filepath, 'rb');
