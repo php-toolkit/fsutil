@@ -12,8 +12,10 @@ use Toolkit\FsUtil\ModifyWatcher;
 require dirname(__DIR__) . '/test/boot.php';
 
 $mw  = new ModifyWatcher();
-$ret = $mw// ->setIdFile(__DIR__ . '/tmp/dir.id')
-    ->watch(dirname(__DIR__))->isChanged();
+$ret = $mw
+    // ->setIdFile(__DIR__ . '/tmp/dir.id')
+    ->watch(dirname(__DIR__))
+    ->isChanged();
 
 // d41d8cd98f00b204e9800998ecf8427e
 // current file:  ae4464472e898ba0bba8dc7302b157c0
