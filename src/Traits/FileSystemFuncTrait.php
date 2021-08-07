@@ -175,12 +175,12 @@ trait FileSystemFuncTrait
         $start  = '';
         $isUnix = DIRECTORY_SEPARATOR === '/';
         if ($isUnix) {
-            // ~: is user home dir in *nix OS
-            if ($parts[0] === '~') {
-                $parts[0] = OS::getUserHomeDir();
-            } else {
-                $start = '/';
-            }
+            $start = '/';
+        }
+
+        // ~: is user home dir in *nix OS
+        if ($parts[0] === '~') {
+            $parts[0] = OS::getUserHomeDir();
         }
 
         $absolutes = [];
