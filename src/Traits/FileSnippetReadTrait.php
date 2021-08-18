@@ -18,6 +18,8 @@ use function assert;
 use function count;
 use function fclose;
 use function feof;
+use function fgets;
+use function fopen;
 use function fseek;
 
 /**
@@ -135,6 +137,22 @@ trait FileSnippetReadTrait
     public static function getLines5u3d(string $file, int $baseLine = 1): array
     {
         return self::readRangeLines($file, $baseLine, 5);
+    }
+
+    /**
+     * Read the first line contents
+     *
+     * @param string $filepath
+     *
+     * @return string
+     */
+    public static function readFirstLine(string $filepath): string
+    {
+        $file = fopen($filepath, 'rb');
+        $line = fgets($file);
+        fclose($file);
+
+        return (string)$line;
     }
 
     /**
