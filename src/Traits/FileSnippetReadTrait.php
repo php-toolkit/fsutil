@@ -21,6 +21,7 @@ use function feof;
 use function fgets;
 use function fopen;
 use function fseek;
+use function trim;
 
 /**
  * Class FileSnippetReadTrait
@@ -149,10 +150,10 @@ trait FileSnippetReadTrait
     public static function readFirstLine(string $filepath): string
     {
         $file = fopen($filepath, 'rb');
-        $line = fgets($file);
+        $line = trim((string)fgets($file));
         fclose($file);
 
-        return (string)$line;
+        return $line;
     }
 
     /**
