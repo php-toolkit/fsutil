@@ -158,6 +158,8 @@ trait FileSystemFuncTrait
     }
 
     /**
+     * clear invalid sep and will parse ~ as user home dir.
+     *
      * @param string $path
      *
      * @return string
@@ -170,12 +172,6 @@ trait FileSystemFuncTrait
         $parts = array_filter(explode(DIRECTORY_SEPARATOR, $path), 'strlen');
         if (!$parts = array_values($parts)) {
             return '';
-        }
-
-        $start  = '';
-        $isUnix = DIRECTORY_SEPARATOR === '/';
-        if ($isUnix) {
-            $start = '/';
         }
 
         // ~: is user home dir in *nix OS
@@ -196,7 +192,14 @@ trait FileSystemFuncTrait
             }
         }
 
-        return $start . implode(DIRECTORY_SEPARATOR, $absolutes);
+        $fullPath = implode(DIRECTORY_SEPARATOR, $absolutes);
+
+        // is unix like OS
+        if (DIRECTORY_SEPARATOR === '/' && $fullPath[0] !== '/') {
+            return '/' . $fullPath;
+        }
+
+        return $fullPath;
     }
 
     /**********************************************************************************
