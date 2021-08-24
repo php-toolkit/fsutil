@@ -47,7 +47,7 @@ abstract class FileSystem
         }
 
         if (strpos($path, '/') === 0 ||  // linux/mac
-            1 === preg_match('#^[a-z]:[\/|\\\]{1}.+#i', $path) // windows
+            1 === preg_match('#^[a-z]:[\/|\\\].+#i', $path) // windows
         ) {
             return true;
         }
