@@ -95,8 +95,8 @@ abstract class FileSystem
         if (strpos($path, 'phar://') === 0) {
             $path = (string)substr($path, 7);
 
-            if (strpos($path, '.phar')) {
-                return preg_replace('//[\w-]+\.phar/', '', $path);
+            if (strpos($path, '.phar') > 0) {
+                return preg_replace('/\/[\w-]+\.phar/', '', $path);
             }
         }
 
