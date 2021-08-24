@@ -3,6 +3,7 @@
 [![License](https://img.shields.io/packagist/l/toolkit/fsutil.svg?style=flat-square)](LICENSE)
 [![Php Version](https://img.shields.io/badge/php-%3E=7.1.0-brightgreen.svg?maxAge=2592000)](https://packagist.org/packages/toolkit/fsutil)
 [![Latest Stable Version](http://img.shields.io/packagist/v/toolkit/fsutil.svg)](https://packagist.org/packages/toolkit/fsutil)
+[![Actions Status](https://github.com/php-toolkit/fsutil/workflows/Unit-Tests/badge.svg)](https://github.com/php-toolkit/fsutil/actions)
 
 Some useful filesystem util for php
 
