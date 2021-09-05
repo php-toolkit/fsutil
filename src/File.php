@@ -367,6 +367,20 @@ class File extends FileSystem
     }
 
     /**
+     * Read one char from stream.
+     *
+     * @param $stream
+     *
+     * @return string
+     */
+    public static function streamReadChar($stream): string
+    {
+        self::assertReadableStream($stream);
+
+        return (string)stream_get_contents($stream, 1);
+    }
+
+    /**
      * Retrieves header/meta data from streams/file pointers
      *
      * Returns:
