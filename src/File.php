@@ -29,6 +29,7 @@ use function in_array;
 use function is_array;
 use function is_string;
 use function stream_get_contents;
+use function stream_get_meta_data;
 use function strlen;
 use function trim;
 
@@ -304,7 +305,7 @@ class File extends FileSystem
      */
     public static function streamWrite($stream, string $content, string $path = ''): void
     {
-        self::assertWritableStream($stream);
+        // self::assertWritableStream($stream);
 
         if (($result = fwrite($stream, $content)) === false || ($result < strlen($content))) {
             throw new IOException('The file "' . $path . '" could not be written to. Check your disk space and file permissions.');
@@ -337,6 +338,19 @@ class File extends FileSystem
     }
 
     /**
+     * Gets line from file pointer
+     *
+     * @param resource $stream
+     * @param int|null $length
+     *
+     * @return string
+     */
+    public static function streamFgets($stream, ?int $length = null): string
+    {
+        return trim((string)fgets($stream, $length));
+    }
+
+    /**
      * @param resource $stream
      * @param int      $length
      * @param int      $offset
@@ -351,16 +365,47 @@ class File extends FileSystem
     }
 
     /**
+     * Retrieves header/meta data from streams/file pointers
+     *
+     * Returns:
+     *
+     * ```php
+     * [
+     * "timed_out" => "bool",
+     * "blocked" => "bool",
+     * "eof" => "bool",
+     * "unread_bytes" => "int",
+     * "stream_type" => "string",
+     * "wrapper_type" => "string",
+     * "wrapper_data" => "mixed",
+     * "mode" => "string",
+     * "seekable" => "bool",
+     * "uri" => "string",
+     * "crypto" => "array",
+     * "mediatype" => "string",
+     * ]
+     * ```
+     *
+     * @param $stream
+     *
+     * @return array
+     */
+    public static function streamMetadata($stream): array
+    {
+        return stream_get_meta_data($stream);
+    }
+
+    /**
      * ********************** 创建多级目录和多个文件 **********************
      * 结合上两个函数
      *
      * @param array $fileData - 数组：要创建的多个文件名组成,含文件的完整路径
      * @param bool  $append   - 是否以追加的方式写入数据 默认false
      * @param int   $mode     =0777 - 权限，默认0775
-     *                        eg: $fileData = array(
+     *                        eg: $fileData = [
      *                        'file_name'   => 'content',
      *                        'case.html'   => 'content' ,
-     *                        );
+     *                        ];
      **/
     public static function createAndWrite(array $fileData = [], bool $append = false, int $mode = 0664): void
     {
