@@ -81,6 +81,21 @@ trait FileSystemFuncTrait
     }
 
     /**
+     * @param resource $stream
+     */
+    public static function assertWritableStream($stream): void
+    {
+        if (!self::isStream($stream)) {
+            throw new InvalidArgumentException('Expected a valid stream');
+        }
+
+        $meta = stream_get_meta_data($stream);
+        if (strpos($meta['mode'], 'w') === false && strpos($meta['mode'], '+') === false) {
+            throw new InvalidArgumentException('Expected a writable stream');
+        }
+    }
+
+    /**
      * @param string   $source
      * @param string   $dest
      * @param resource $context

@@ -304,7 +304,9 @@ class File extends FileSystem
      */
     public static function streamWrite($stream, string $content, string $path = ''): void
     {
-        if (($result = @fwrite($stream, $content)) === false || ($result < strlen($content))) {
+        self::assertWritableStream($stream);
+
+        if (($result = fwrite($stream, $content)) === false || ($result < strlen($content))) {
             throw new IOException('The file "' . $path . '" could not be written to. Check your disk space and file permissions.');
         }
     }
@@ -317,6 +319,8 @@ class File extends FileSystem
      */
     public static function streamRead($stream, int $length = 1024): string
     {
+        self::assertReadableStream($stream);
+
         return (string)fread($stream, $length);
     }
 
@@ -327,6 +331,8 @@ class File extends FileSystem
      */
     public static function streamReadln($stream): string
     {
+        self::assertReadableStream($stream);
+
         return trim((string)fgets($stream));
     }
 
@@ -339,6 +345,8 @@ class File extends FileSystem
      */
     public static function streamReadAll($stream, int $length = -1, int $offset = -1): string
     {
+        self::assertReadableStream($stream);
+
         return (string)stream_get_contents($stream, $length, $offset);
     }
 
