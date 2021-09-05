@@ -82,15 +82,15 @@ class File extends FileSystem
         switch ($format) {
             case self::FORMAT_YML:
             case self::FORMAT_YAML:
-                $array = self::loadYaml($src);
+                $array = self::parseYaml($src);
                 break;
 
             case self::FORMAT_JSON:
-                $array = self::loadJson($src);
+                $array = self::parseJson($src);
                 break;
 
             case self::FORMAT_INI:
-                $array = self::loadIni($src);
+                $array = self::parseIni($src);
                 break;
 
             case self::FORMAT_PHP:
