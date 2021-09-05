@@ -301,15 +301,17 @@ class File extends FileSystem
      * @param string   $content The content to write.
      * @param string   $path    The path to the file (for exception printing only).
      *
+     * @return int
      * @throws IOException
      */
-    public static function streamWrite($stream, string $content, string $path = ''): void
+    public static function streamWrite($stream, string $content, string $path = ''): int
     {
         // self::assertWritableStream($stream);
-
-        if (($result = fwrite($stream, $content)) === false || ($result < strlen($content))) {
+        if (($result = fwrite($stream, $content)) === false) {
             throw new IOException('The file "' . $path . '" could not be written to. Check your disk space and file permissions.');
         }
+
+        return $result;
     }
 
     /**
