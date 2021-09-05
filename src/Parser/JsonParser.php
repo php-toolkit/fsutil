@@ -39,8 +39,7 @@ class JsonParser extends AbstractParser
      * @param string   $fileDir     When the second param is true, this param is valid.
      *
      * @return array
-     * @throws InvalidArgumentException
-     * @throws UnexpectedValueException
+     * @throws InvalidArgumentException|\JsonException
      */
     protected static function doParse(
         string $string,

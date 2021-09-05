@@ -20,13 +20,17 @@ use Toolkit\FsUtil\Parser\YamlParser;
 use Toolkit\FsUtil\Traits\FileOperateTrait;
 use Toolkit\FsUtil\Traits\FileSnippetReadTrait;
 use function dirname;
+use function fgets;
 use function file_get_contents;
 use function file_put_contents;
+use function fread;
 use function function_exists;
 use function in_array;
 use function is_array;
 use function is_string;
+use function stream_get_contents;
 use function strlen;
+use function trim;
 
 /**
  * Class File
@@ -58,8 +62,21 @@ class File extends FileSystem
      *
      * @return array
      * @throws FileNotFoundException
+     * @deprecated please use parse()
      */
     public static function load(string $src, string $format = self::FORMAT_PHP): array
+    {
+        return self::parse($src, $format);
+    }
+
+    /**
+     * @param string $src 要解析的 文件 或 字符串内容。
+     * @param string $format
+     *
+     * @return array
+     * @throws FileNotFoundException
+     */
+    public static function parse(string $src, string $format = self::FORMAT_PHP): array
     {
         $src = trim($src);
         switch ($format) {
@@ -113,38 +130,81 @@ class File extends FileSystem
     }
 
     /**
-     * @param string $file
+     * @param string $fileOrContents
      *
      * @return array
      */
-    public static function loadJson(string $file): array
+    public static function parseJson(string $fileOrContents): array
     {
-        return JsonParser::parse($file);
+        return JsonParser::parse($fileOrContents);
     }
 
     /**
-     * @param string $ini 要解析的 ini 文件名 或 字符串内容。
+     * @param string $fileOrContents
      *
      * @return array
+     * @deprecated please use parseJson()
      */
-    public static function loadIni(string $ini): array
+    public static function loadJson(string $fileOrContents): array
     {
-        return IniParser::parse($ini);
+        return JsonParser::parse($fileOrContents);
     }
 
     /**
-     * @param string $yml 要解析的 yml 文件名 或 字符串内容。
+     * @param string $fileOrContents 要解析的 ini 文件名 或 字符串内容。
      *
      * @return array
      */
-    public static function loadYaml(string $yml): array
+    public static function parseIni(string $fileOrContents): array
     {
-        return YamlParser::parse($yml);
+        return IniParser::parse($fileOrContents);
+    }
+
+    /**
+     * @param string $fileOrContents 要解析的 ini 文件名 或 字符串内容。
+     *
+     * @return array
+     * @deprecated please use parseIni()
+     */
+    public static function loadIni(string $fileOrContents): array
+    {
+        return IniParser::parse($fileOrContents);
+    }
+
+    /**
+     * @param string $fileOrContents 要解析的 yml 文件名 或 字符串内容。
+     *
+     * @return array
+     */
+    public static function parseYaml(string $fileOrContents): array
+    {
+        return YamlParser::parse($fileOrContents);
+    }
+
+    /**
+     * @param string $fileOrContents 要解析的 yml 文件名 或 字符串内容。
+     *
+     * @return array
+     * @deprecated please use parseYaml()
+     */
+    public static function loadYaml(string $fileOrContents): array
+    {
+        return YamlParser::parse($fileOrContents);
     }
 
     /**********************************************************************************
      * php function wrapper, add error handle
      *********************************************************************************/
+
+    /**
+     * @param string $filename
+     *
+     * @return string
+     */
+    public static function readAll(string $filename): string
+    {
+        return self::getContents($filename);
+    }
 
     /**
      * @param string   $filename
@@ -206,18 +266,16 @@ class File extends FileSystem
     }
 
     /**
-     * @param $content
-     * @param $path
-     *
-     * @throws IOException
+     * @param string $content
+     * @param string $path
      */
-    public static function write($content, $path): void
+    public static function write(string $content, string $path): void
     {
-        $handler = static::openHandler($path);
+        $stream = static::streamOpen($path);
 
-        static::writeToFile($handler, $content);
+        static::streamWrite($stream, $content);
 
-        @fclose($handler);
+        fclose($stream);
     }
 
     /**
@@ -226,29 +284,62 @@ class File extends FileSystem
      * @return resource
      * @throws IOException
      */
-    public static function openHandler(string $path)
+    public static function streamOpen(string $path)
     {
-        if (($handler = @fopen($path, 'wb')) === false) {
-            throw new IOException('The file "' . $path . '" could not be opened for writing. Check if PHP has enough permissions.');
+        if (($stream = @fopen($path, 'wb')) === false) {
+            throw new IOException('The file "' . $path . '" could not be opened for writing. Check has enough permissions.');
         }
 
-        return $handler;
+        return $stream;
     }
 
     /**
      * Attempts to write $content to the file specified by $handler. $path is used for printing exceptions.
      *
-     * @param resource $handler The resource to write to.
+     * @param resource $stream  The resource to write to.
      * @param string   $content The content to write.
      * @param string   $path    The path to the file (for exception printing only).
      *
      * @throws IOException
      */
-    public static function writeToFile($handler, string $content, string $path = ''): void
+    public static function streamWrite($stream, string $content, string $path = ''): void
     {
-        if (($result = @fwrite($handler, $content)) === false || ($result < strlen($content))) {
+        if (($result = @fwrite($stream, $content)) === false || ($result < strlen($content))) {
             throw new IOException('The file "' . $path . '" could not be written to. Check your disk space and file permissions.');
         }
+    }
+
+    /**
+     * @param resource $stream
+     * @param int      $length
+     *
+     * @return string
+     */
+    public static function streamRead($stream, int $length = 1024): string
+    {
+        return (string)fread($stream, $length);
+    }
+
+    /**
+     * @param resource $stream
+     *
+     * @return string
+     */
+    public static function streamReadln($stream): string
+    {
+        return trim((string)fgets($stream));
+    }
+
+    /**
+     * @param resource $stream
+     * @param int      $length
+     * @param int      $offset
+     *
+     * @return string
+     */
+    public static function streamReadAll($stream, int $length = -1, int $offset = -1): string
+    {
+        return (string)stream_get_contents($stream, $length, $offset);
     }
 
     /**
@@ -291,6 +382,7 @@ class File extends FileSystem
      * @return bool|string
      * @throws FileNotFoundException
      * @throws FileReadException
+     * @noinspection PhpComposerExtensionStubsInspection
      */
     public static function getContentsV2(
         string $file,
@@ -436,7 +528,7 @@ class File extends FileSystem
      * @param string $file
      * @param string $as
      */
-    public static function downBigFile($file, $as): void
+    public static function downBigFile(string $file, string $as): void
     {
         header('Expires: Mon, 1 Apr 1974 05:00:00 GMT');
         header('Pragma: no-cache');

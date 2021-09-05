@@ -10,6 +10,7 @@
 namespace Toolkit\FsUtil\Traits;
 
 use FilesystemIterator;
+use InvalidArgumentException;
 use Toolkit\FsUtil\Exception\FileSystemException;
 use Toolkit\FsUtil\Exception\IOException;
 use Toolkit\Stdlib\Arr;
@@ -22,13 +23,18 @@ use function copy;
 use function error_get_last;
 use function explode;
 use function function_exists;
+use function get_resource_type;
 use function implode;
 use function is_dir;
+use function is_resource;
+use function is_writable;
 use function mkdir;
 use function realpath;
 use function rmdir;
 use function str_replace;
+use function stream_get_meta_data;
 use function strlen;
+use function strpos;
 use const DIRECTORY_SEPARATOR;
 
 /**
@@ -38,6 +44,42 @@ use const DIRECTORY_SEPARATOR;
  */
 trait FileSystemFuncTrait
 {
+
+    /**
+     * @param resource $stream
+     *
+     * @return bool
+     */
+    public static function isStream($stream): bool
+    {
+        return is_resource($stream) && get_resource_type($stream) === 'stream';
+    }
+
+    /**
+     * @param resource $stream
+     */
+    public static function assertStream($stream): void
+    {
+        if (!self::isStream($stream)) {
+            throw new InvalidArgumentException('Expected a valid stream');
+        }
+    }
+
+    /**
+     * @param resource $stream
+     */
+    public static function assertReadableStream($stream): void
+    {
+        if (!self::isStream($stream)) {
+            throw new InvalidArgumentException('Expected a valid stream');
+        }
+
+        $meta = stream_get_meta_data($stream);
+        if (strpos($meta['mode'], 'r') === false && strpos($meta['mode'], '+') === false) {
+            throw new InvalidArgumentException('Expected a readable stream');
+        }
+    }
+
     /**
      * @param string   $source
      * @param string   $dest
@@ -102,6 +144,20 @@ trait FileSystemFuncTrait
         }
 
         return is_readable($filename);
+    }
+
+    /**
+     * @param string $filename
+     *
+     * @return bool
+     */
+    public static function isWriteable(string $filename): bool
+    {
+        if ('\\' === DIRECTORY_SEPARATOR && strlen($filename) > 258) {
+            throw new IOException('Could not check if file is readable because path length exceeds 258 characters.');
+        }
+
+        return is_writable($filename);
     }
 
     /**

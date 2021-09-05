@@ -13,6 +13,7 @@ use InvalidArgumentException;
 use function dirname;
 use function file_get_contents;
 use function is_file;
+use function strlen;
 
 /**
  * Class BaseParser
@@ -32,7 +33,7 @@ abstract class AbstractParser
      *
      * @param string   $string      Waiting for the parse data
      * @param bool     $enhancement 启用增强功能，支持通过关键字 继承、导入、参考
-     * @param callable $pathHandler When the second param is true, this param is valid.
+     * @param callable|null $pathHandler When the second param is true, this param is valid.
      * @param string   $fileDir     When the second param is true, this param is valid.
      *
      * @return array
@@ -58,7 +59,7 @@ abstract class AbstractParser
         callable $pathHandler = null,
         string $fileDir = ''
     ): array {
-        if (is_file($string)) {
+        if (strlen($string) < 256 && is_file($string)) {
             return self::parseFile($string, $enhancement, $pathHandler, $fileDir);
         }
 
@@ -78,7 +79,7 @@ abstract class AbstractParser
         string $file,
         bool $enhancement = false,
         callable $pathHandler = null,
-        $fileDir = ''
+        string $fileDir = ''
     ): array {
         if (!is_file($file)) {
             throw new InvalidArgumentException("Target file [$file] not exists");
@@ -91,7 +92,7 @@ abstract class AbstractParser
     }
 
     /**
-     * @param               $string
+     * @param string      $string
      * @param bool          $enhancement
      * @param callable|null $pathHandler
      * @param string        $fileDir
