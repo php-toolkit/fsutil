@@ -86,17 +86,27 @@ abstract class FileSystem
     }
 
     /**
-     * @param string $path e.g phar://E:/workenv/xxx/yyy/app.phar/web
+     * @param string $path
      *
      * @return string
      */
     public static function clearPharPath(string $path): string
     {
+        return self::clearPharMark($path);
+    }
+
+    /**
+     * @param string $path e.g 'phar://E:/workenv/xxx/yyy/app.phar/web' -> 'E:/workenv/xxx/yyy/web'
+     *
+     * @return string
+     */
+    public static function clearPharMark(string $path): string
+    {
         if (strpos($path, 'phar://') === 0) {
             $path = (string)substr($path, 7);
 
             if (strpos($path, '.phar') > 0) {
-                return preg_replace('/\/[\w-]+\.phar/', '', $path);
+                return preg_replace('/\/[\w\.-]+\.phar/', '', $path);
             }
         }
 

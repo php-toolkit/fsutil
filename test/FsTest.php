@@ -33,6 +33,7 @@ class FsTest extends TestCase
             ['phar:///workenv/xxx/yyy/app.phar/web', '/workenv/xxx/yyy/web'],
             ['E:/workenv/xxx/yyy/web', 'E:/workenv/xxx/yyy/web'],
             ['/workenv/xxx/yyy/web', '/workenv/xxx/yyy/web'],
+            ['phar:///home/runner/kite/kite-v1.1.8.phar/config/config.php', '/home/runner/kite/config/config.php'],
         ];
 
         foreach ($tests as [$test, $want]) {
