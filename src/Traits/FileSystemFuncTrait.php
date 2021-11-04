@@ -75,7 +75,7 @@ trait FileSystemFuncTrait
         }
 
         $meta = stream_get_meta_data($stream);
-        if (strpos($meta['mode'], 'r') === false && strpos($meta['mode'], '+') === false) {
+        if (!str_contains($meta['mode'], 'r') && !str_contains($meta['mode'], '+')) {
             throw new InvalidArgumentException('Expected a readable stream');
         }
     }

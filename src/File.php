@@ -27,6 +27,7 @@ use function fread;
 use function function_exists;
 use function in_array;
 use function is_array;
+use function is_file;
 use function is_string;
 use function stream_get_contents;
 use function stream_get_meta_data;
@@ -117,9 +118,7 @@ class File extends FileSystem
         $ary = [];
 
         if (is_file($file)) {
-            /** @noinspection PhpIncludeInspection */
             $ary = require $file;
-
             if (!is_array($ary)) {
                 $ary = [];
             }
@@ -223,6 +222,10 @@ class File extends FileSystem
         int $offset = 0,
         int $maxlen = null
     ): string {
+        if (!is_file($filename)) {
+            throw new InvalidArgumentException("No such file: $filename");
+        }
+
         $content = file_get_contents($filename, $useIncludePath, $context, $offset, $maxlen);
         if ($content === false) {
             throw new FileWriteException('read contents error from file: ' . $filename);

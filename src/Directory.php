@@ -233,7 +233,7 @@ class Directory extends FileSystem
      *
      * @return bool
      */
-    public static function create(string $path, int $mode = 0665, bool $recursive = true): bool
+    public static function create(string $path, int $mode = 0666, bool $recursive = true): bool
     {
         return (is_dir($path) || !(!@mkdir($path, $mode, $recursive) && !is_dir($path))) && is_writable($path);
     }
@@ -247,7 +247,7 @@ class Directory extends FileSystem
      *
      * @return bool
      */
-    public static function mkSubDirs(string $parentDir, array $subDirs, int $mode = 0665): bool
+    public static function mkSubDirs(string $parentDir, array $subDirs, int $mode = 0666): bool
     {
         if (!self::create($parentDir)) {
             return false;
