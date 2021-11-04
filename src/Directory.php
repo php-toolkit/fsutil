@@ -87,7 +87,6 @@ class Directory extends FileSystem
         }
 
         $len = strlen($path);
-
         foreach (glob($path . '*') as $v) {
             if (is_dir($v)) {
                 $relatePath = substr($v, $len);
@@ -205,9 +204,8 @@ class Directory extends FileSystem
             throw new FileNotFoundException("directory not exists! DIR: $path");
         }
 
-        $ext = is_array($ext) ? implode('|', $ext) : trim($ext);
-
         static $id = 0;
+        $ext = is_array($ext) ? implode('|', $ext) : trim($ext);
 
         // glob()寻找与模式匹配的文件路径
         foreach (glob($path . '*') as $file) {
@@ -235,9 +233,30 @@ class Directory extends FileSystem
      *
      * @return bool
      */
-    public static function create(string $path, int $mode = 0775, bool $recursive = true): bool
+    public static function create(string $path, int $mode = 0665, bool $recursive = true): bool
     {
         return (is_dir($path) || !(!@mkdir($path, $mode, $recursive) && !is_dir($path))) && is_writable($path);
+    }
+
+    /**
+     * quick make sub-dirs in the given parent dir.
+     *
+     * @param string $parentDir
+     * @param array $subDirs
+     * @param int $mode
+     *
+     * @return bool
+     */
+    public static function mkSubDirs(string $parentDir, array $subDirs, int $mode = 0665): bool
+    {
+        if (!self::create($parentDir)) {
+            return false;
+        }
+
+        foreach ($subDirs as $subPath) {
+
+        }
+        return true;
     }
 
     /**
@@ -258,7 +277,6 @@ class Directory extends FileSystem
         }
 
         self::create($newDir);
-
         foreach (glob($oldDir . '*') as $v) {
             $newFile = $newDir . basename($v);//文件
 

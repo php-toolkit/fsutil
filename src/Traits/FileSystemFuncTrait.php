@@ -245,7 +245,7 @@ trait FileSystemFuncTrait
             return '';
         }
 
-        // ~: is user home dir in *nix OS
+        // ~: is user home dir in OS
         if ($parts[0] === '~') {
             $parts[0] = OS::getUserHomeDir();
         }

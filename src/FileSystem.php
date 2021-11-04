@@ -16,8 +16,10 @@ use RecursiveIteratorIterator;
 use Toolkit\FsUtil\Exception\FileNotFoundException;
 use Toolkit\FsUtil\Traits\FileSystemFuncTrait;
 use Toolkit\Stdlib\OS;
+use function array_filter;
 use function count;
 use function file_exists;
+use function implode;
 use function is_array;
 use function is_string;
 use function preg_match;
@@ -25,6 +27,7 @@ use function str_ireplace;
 use function strlen;
 use function strpos;
 use function substr;
+use const DIRECTORY_SEPARATOR;
 
 /**
  * Class FileSystem
@@ -46,7 +49,7 @@ abstract class FileSystem
             return false;
         }
 
-        if (strpos($path, '/') === 0 ||  // linux/mac
+        if (str_starts_with($path, '/') ||  // linux/mac
             1 === preg_match('#^[a-z]:[\/|\\\].+#i', $path) // windows
         ) {
             return true;
@@ -72,6 +75,16 @@ abstract class FileSystem
     }
 
     /**
+     * @param string $path
+     *
+     * @return string
+     */
+    public static function getAbsPath(string $path): string
+    {
+        return self::realpath($path);
+    }
+
+    /**
      * 转换为标准的路径结构
      *
      * @param string $dirName
@@ -82,7 +95,34 @@ abstract class FileSystem
     {
         $dirName = (string)str_ireplace('\\', '/', trim($dirName));
 
-        return substr($dirName, -1) === '/' ? $dirName : $dirName . '/';
+        return str_ends_with($dirName, '/') ? $dirName : $dirName . '/';
+    }
+
+    /**
+     * @param string $path
+     * @param string ...$subPaths
+     *
+     * @return string
+     */
+    public static function join(string $path, string ...$subPaths): string
+    {
+        return self::joinPath($path, ...$subPaths);
+    }
+
+    /**
+     * @param string $path
+     * @param string ...$subPaths
+     *
+     * @return string
+     */
+    public static function joinPath(string $path, string ...$subPaths): string
+    {
+        $subPaths = array_filter($subPaths, 'strlen');
+        if (!$subPaths) {
+            return $path;
+        }
+
+        return $path . DIRECTORY_SEPARATOR . implode(DIRECTORY_SEPARATOR, $subPaths);
     }
 
     /**
@@ -102,8 +142,8 @@ abstract class FileSystem
      */
     public static function clearPharMark(string $path): string
     {
-        if (strpos($path, 'phar://') === 0) {
-            $path = (string)substr($path, 7);
+        if (str_starts_with($path, 'phar://')) {
+            $path = substr($path, 7);
 
             if (strpos($path, '.phar') > 0) {
                 return preg_replace('/\/[\w\.-]+\.phar/', '', $path);

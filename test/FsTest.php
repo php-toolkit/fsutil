@@ -4,6 +4,8 @@ namespace Toolkit\FsUtilTest;
 
 use PHPUnit\Framework\TestCase;
 use Toolkit\FsUtil\FS;
+use function strlen;
+use function vdump;
 
 /**
  * class FsTest
@@ -24,6 +26,30 @@ class FsTest extends TestCase
             $this->assertTrue(FS::isAbsPath($case));
             $this->assertTrue(FS::isAbsolutePath($case));
         }
+    }
+
+    public function testBasicFsMethods(): void
+    {
+        $this->assertEquals('/ab', FS::join('/ab'));
+        $this->assertEquals('/ab/d', FS::join('/ab', '', 'd'));
+        $this->assertEquals('/ab/d/e', FS::join('/ab', 'd', 'e'));
+    }
+
+    public function testRealpath(): void
+    {
+        $rPaths = [];
+        $tests = [
+            '~',
+            '~/.kite',
+        ];
+        foreach ($tests as $path) {
+            $rPaths[$path] = $rPath = FS::realpath($path);
+            $this->assertTrue(strlen($rPath) > strlen($path));
+            $rPath = FS::getAbsPath($path);
+            $this->assertTrue(strlen($rPath) > strlen($path));
+        }
+
+        vdump($rPaths);
     }
 
     public function testClearPharPath(): void
