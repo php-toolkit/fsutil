@@ -239,7 +239,7 @@ class Directory extends FileSystem
     }
 
     /**
-     * quick make sub-dirs in the given parent dir.
+     * Quick make sub-dirs in the given parent dir.
      *
      * @param string $parentDir
      * @param array $subDirs
@@ -254,8 +254,9 @@ class Directory extends FileSystem
         }
 
         foreach ($subDirs as $subPath) {
-
+            self::create($parentDir . '/' . $subPath, $mode);
         }
+
         return true;
     }
 
