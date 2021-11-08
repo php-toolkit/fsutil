@@ -233,7 +233,7 @@ class Directory extends FileSystem
      *
      * @return bool
      */
-    public static function create(string $path, int $mode = 0666, bool $recursive = true): bool
+    public static function create(string $path, int $mode = 0765, bool $recursive = true): bool
     {
         return (is_dir($path) || !(!@mkdir($path, $mode, $recursive) && !is_dir($path))) && is_writable($path);
     }

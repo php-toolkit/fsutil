@@ -17,16 +17,20 @@ use Toolkit\FsUtil\Exception\FileNotFoundException;
 use Toolkit\FsUtil\Traits\FileSystemFuncTrait;
 use Toolkit\Stdlib\OS;
 use function array_filter;
+use function array_map;
 use function count;
 use function file_exists;
 use function implode;
 use function is_array;
+use function is_dir;
+use function is_file;
 use function is_string;
 use function preg_match;
 use function str_ireplace;
 use function strlen;
 use function strpos;
 use function substr;
+use function trim;
 use const DIRECTORY_SEPARATOR;
 
 /**
@@ -99,30 +103,33 @@ abstract class FileSystem
     }
 
     /**
-     * @param string $path
+     * @param string $basePath
      * @param string ...$subPaths
      *
      * @return string
      */
-    public static function join(string $path, string ...$subPaths): string
+    public static function join(string $basePath, string ...$subPaths): string
     {
-        return self::joinPath($path, ...$subPaths);
+        return self::joinPath($basePath, ...$subPaths);
     }
 
     /**
-     * @param string $path
+     * @param string $basePath
      * @param string ...$subPaths
      *
      * @return string
      */
-    public static function joinPath(string $path, string ...$subPaths): string
+    public static function joinPath(string $basePath, string ...$subPaths): string
     {
-        $subPaths = array_filter($subPaths, 'strlen');
+        $subPaths = array_filter(array_map(static function ($path) {
+            return trim($path, '/\\ ');
+        }, $subPaths), 'strlen');
+
         if (!$subPaths) {
-            return $path;
+            return $basePath;
         }
 
-        return $path . DIRECTORY_SEPARATOR . implode(DIRECTORY_SEPARATOR, $subPaths);
+        return $basePath . DIRECTORY_SEPARATOR . implode(DIRECTORY_SEPARATOR, $subPaths);
     }
 
     /**
@@ -151,6 +158,26 @@ abstract class FileSystem
         }
 
         return $path;
+    }
+
+    /**
+     * @param string $filepath
+     */
+    public static function assertIsFile(string $filepath): void
+    {
+        if (is_file($filepath)) {
+            throw new InvalidArgumentException("No such file: $filepath");
+        }
+    }
+
+    /**
+     * @param string $dirPath
+     */
+    public static function assertIsDir(string $dirPath): void
+    {
+        if (is_dir($dirPath)) {
+            throw new InvalidArgumentException("No such directory: $dirPath");
+        }
     }
 
     /**

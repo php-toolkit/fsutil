@@ -235,14 +235,15 @@ class File extends FileSystem
     }
 
     /**
-     * save content use file_put_contents()
+     * save contents to file use file_put_contents()
      *
      * @param string $filename
-     * @param mixed  $data string, array(仅一维数组) 或者是 stream  资源
+     * @param string|array|resource  $data string, array(仅一维数组) 或者是 stream  资源
      * @param int    $flags
      * @param null   $context
      *
      * @return int
+     * @see file_put_contents()
      */
     public static function putContents(string $filename, $data, int $flags = 0, $context = null): int
     {
@@ -255,16 +256,31 @@ class File extends FileSystem
     }
 
     /**
-     * save content
+     * save contents to file.
      *
      * @param string $filename
-     * @param mixed  $data string, array(仅一维数组) 或者是 stream  资源
+     * @param string|array|resource  $data string, array(仅一维数组) 或者是 stream  资源
      * @param int    $flags
-     * @param mixed  $context
+     * @param null|resource $context
      *
      * @return int
      */
-    public static function save(string $filename, string $data, int $flags = 0, $context = null): int
+    public static function save(string $filename, $data, int $flags = 0, $context = null): int
+    {
+        return self::putContents($filename, $data, $flags, $context);
+    }
+
+    /**
+     * save contents to file. if dir is not exists, will create it.
+     *
+     * @param string $filename
+     * @param string|array|resource  $data
+     * @param int $flags
+     * @param null|mixed $context
+     *
+     * @return int
+     */
+    public static function mkdirSave(string $filename, $data, int $flags = 0, $context = null): int
     {
         return self::putContents($filename, $data, $flags, $context);
     }
@@ -272,14 +288,15 @@ class File extends FileSystem
     /**
      * @param string $content
      * @param string $path
+     *
+     * @return bool
      */
-    public static function write(string $content, string $path): void
+    public static function write(string $content, string $path): bool
     {
         $stream = static::streamOpen($path);
-
         static::streamWrite($stream, $content);
 
-        fclose($stream);
+        return fclose($stream);
     }
 
     /**
