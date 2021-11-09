@@ -27,6 +27,7 @@ use function fread;
 use function function_exists;
 use function in_array;
 use function is_array;
+use function is_dir;
 use function is_file;
 use function is_string;
 use function stream_get_contents;
@@ -282,6 +283,10 @@ class File extends FileSystem
      */
     public static function mkdirSave(string $filename, $data, int $flags = 0, $context = null): int
     {
+        if (!is_dir($dir = dirname($filename))) {
+            self::mkdir($dir);
+        }
+
         return self::putContents($filename, $data, $flags, $context);
     }
 
