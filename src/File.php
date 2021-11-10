@@ -16,7 +16,6 @@ use Toolkit\FsUtil\Exception\FileWriteException;
 use Toolkit\FsUtil\Exception\IOException;
 use Toolkit\FsUtil\Parser\IniParser;
 use Toolkit\FsUtil\Parser\JsonParser;
-use Toolkit\FsUtil\Parser\YamlParser;
 use Toolkit\FsUtil\Traits\FileOperateTrait;
 use Toolkit\FsUtil\Traits\FileSnippetReadTrait;
 use function dirname;
@@ -83,11 +82,6 @@ class File extends FileSystem
     {
         $src = trim($src);
         switch ($format) {
-            case self::FORMAT_YML:
-            case self::FORMAT_YAML:
-                $array = self::parseYaml($src);
-                break;
-
             case self::FORMAT_JSON:
                 $array = self::parseJson($src);
                 break;
@@ -97,9 +91,10 @@ class File extends FileSystem
                 break;
 
             case self::FORMAT_PHP:
-            default:
-                $array = self::loadPhp($src);
+                $array = self::loadPhpFile($src);
                 break;
+            default:
+                throw new InvalidArgumentException('unsupported format ' . $format);
         }
 
         return $array;
@@ -114,7 +109,7 @@ class File extends FileSystem
      * @return array
      * @throws FileNotFoundException
      */
-    public static function loadPhp(string $file, bool $throwError = true): array
+    public static function loadPhpFile(string $file, bool $throwError = true): array
     {
         $ary = [];
 
@@ -170,27 +165,6 @@ class File extends FileSystem
     public static function loadIni(string $fileOrContents): array
     {
         return IniParser::parse($fileOrContents);
-    }
-
-    /**
-     * @param string $fileOrContents 要解析的 yml 文件名 或 字符串内容。
-     *
-     * @return array
-     */
-    public static function parseYaml(string $fileOrContents): array
-    {
-        return YamlParser::parse($fileOrContents);
-    }
-
-    /**
-     * @param string $fileOrContents 要解析的 yml 文件名 或 字符串内容。
-     *
-     * @return array
-     * @deprecated please use parseYaml()
-     */
-    public static function loadYaml(string $fileOrContents): array
-    {
-        return YamlParser::parse($fileOrContents);
     }
 
     /**********************************************************************************

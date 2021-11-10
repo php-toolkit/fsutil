@@ -23,6 +23,7 @@ use function is_writable;
 use function pathinfo;
 use function preg_match;
 use function stat;
+use function str_contains;
 use function strrchr;
 use function strstr;
 use function trim;
@@ -48,7 +49,11 @@ trait FileOperateTrait
      */
     public static function getName(string $file, bool $clearExt = false): string
     {
-        $filename = basename(trim($file));
+        if (!str_contains($file, '.')) {
+            return basename($file);
+        }
+
+        $filename = basename($file);
 
         return $clearExt ? strstr($filename, '.', true) : $filename;
     }
