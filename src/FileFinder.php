@@ -27,14 +27,18 @@ use RuntimeException;
 use SplFileInfo;
 use Traversable;
 use UnexpectedValueException;
+use function array_filter;
 use function array_flip;
 use function array_merge;
 use function closedir;
 use function count;
 use function fnmatch;
+use function get_object_vars;
 use function is_iterable;
 use function iterator_count;
+use function str_contains;
 use function stream_get_meta_data;
+use function vdump;
 
 /**
  * Class FileFinder
@@ -57,6 +61,7 @@ use function stream_get_meta_data;
  */
 final class FileFinder implements IteratorAggregate, Countable
 {
+    public const MODE_ALL         = 0;
     public const ONLY_FILE        = 1;
     public const ONLY_DIR         = 2;
 
@@ -75,13 +80,20 @@ final class FileFinder implements IteratorAggregate, Countable
     /** @var bool */
     private $ignoreVcsAdded = false;
 
+    /**
+     * @var bool
+     */
+    private $skipUnreadableDirs = true;
+
     /** @var array */
     private $dirs = [];
 
     /** @var array */
     private $names = [];
 
-    /** @var array */
+    /**
+     * @var array exclude file/dir names
+     */
     private $notNames = [];
 
     /** @var array */
@@ -90,7 +102,9 @@ final class FileFinder implements IteratorAggregate, Countable
     /** @var array */
     private $notPaths = [];
 
-    /** @var array */
+    /**
+     * @var array exclude directories
+     */
     private $excludes = [];
 
     /** @var array */
@@ -151,7 +165,6 @@ final class FileFinder implements IteratorAggregate, Countable
     public function directories(): self
     {
         $this->mode = self::ONLY_DIR;
-
         return $this;
     }
 
@@ -161,7 +174,15 @@ final class FileFinder implements IteratorAggregate, Countable
     public function dirs(): self
     {
         $this->mode = self::ONLY_DIR;
+        return $this;
+    }
 
+    /**
+     * @return $this
+     */
+    public function onlyDirs(): self
+    {
+        $this->mode = self::ONLY_DIR;
         return $this;
     }
 
@@ -171,7 +192,15 @@ final class FileFinder implements IteratorAggregate, Countable
     public function files(): self
     {
         $this->mode = self::ONLY_FILE;
+        return $this;
+    }
 
+    /**
+     * @return FileFinder
+     */
+    public function onlyFiles(): self
+    {
+        $this->mode = self::ONLY_FILE;
         return $this;
     }
 
@@ -185,7 +214,9 @@ final class FileFinder implements IteratorAggregate, Countable
      */
     public function name(string $pattern): self
     {
-        $this->names[] = $pattern;
+        if ($pattern) {
+            $this->names[] = $pattern;
+        }
 
         return $this;
     }
@@ -212,6 +243,19 @@ final class FileFinder implements IteratorAggregate, Countable
     public function notName(string $pattern): self
     {
         $this->notNames[] = $pattern;
+        return $this;
+    }
+
+    /**
+     * @param string|array $patterns
+     *
+     * @return FileFinder
+     */
+    public function notNames($patterns): self
+    {
+        if ($patterns) {
+            $this->notNames = array_merge($this->notNames, (array)$patterns);
+        }
 
         return $this;
     }
@@ -223,11 +267,7 @@ final class FileFinder implements IteratorAggregate, Countable
      */
     public function addNotNames($patterns): self
     {
-        if ($patterns) {
-            $this->notNames = array_merge($this->notNames, (array)$patterns);
-        }
-
-        return $this;
+        return $this->notNames($patterns);
     }
 
     /**
@@ -240,7 +280,6 @@ final class FileFinder implements IteratorAggregate, Countable
     public function path(string $pattern): self
     {
         $this->paths[] = $pattern;
-
         return $this;
     }
 
@@ -265,9 +304,20 @@ final class FileFinder implements IteratorAggregate, Countable
      */
     public function notPath(string $pattern): self
     {
-        $this->notPaths[] = $pattern;
-
+        if ($pattern) {
+            $this->notPaths[] = $pattern;
+        }
         return $this;
+    }
+
+    /**
+     * @param string|array $patterns
+     *
+     * @return FileFinder
+     */
+    public function notPaths($patterns): self
+    {
+        return $this->addNotPaths($patterns);
     }
 
     /**
@@ -330,6 +380,36 @@ final class FileFinder implements IteratorAggregate, Countable
     }
 
     /**
+     * @param bool $skipUnreadableDirs
+     *
+     * @return $this
+     */
+    public function ignoreUnreadableDirs(bool $skipUnreadableDirs = true): self
+    {
+        return $this->skipUnreadableDirs($skipUnreadableDirs);
+    }
+
+    /**
+     * @param bool $skipUnreadableDirs
+     *
+     * @return $this
+     */
+    public function skipUnreadableDirs(bool $skipUnreadableDirs = true): self
+    {
+        $this->skipUnreadableDirs = $skipUnreadableDirs;
+        return $this;
+    }
+
+    /**
+     * @return FileFinder
+     */
+    public function notFollowLinks(): self
+    {
+        $this->followLinks = false;
+        return $this;
+    }
+
+    /**
      * @param bool|mixed $followLinks
      *
      * @return FileFinder
@@ -337,7 +417,6 @@ final class FileFinder implements IteratorAggregate, Countable
     public function followLinks($followLinks = true): self
     {
         $this->followLinks = (bool)$followLinks;
-
         return $this;
     }
 
@@ -406,6 +485,23 @@ final class FileFinder implements IteratorAggregate, Countable
     }
 
     /**
+     * @return array
+     */
+    public function getInfo(): array
+    {
+        $info = get_object_vars($this);
+
+        $mode2desc = [
+            self::MODE_ALL => 'ALL',
+            self::ONLY_DIR => 'DIR',
+            self::ONLY_FILE => 'FILE',
+        ];
+        $info['mode'] = $mode2desc[$this->mode];
+
+        return $info;
+    }
+
+    /**
      * @return int
      */
     public function count(): int
@@ -419,6 +515,16 @@ final class FileFinder implements IteratorAggregate, Countable
     public function isFollowLinks(): bool
     {
         return $this->followLinks;
+    }
+
+    /**
+     * @param callable(\SplFileInfo) $fn
+     */
+    public function each(callable $fn): void
+    {
+        foreach ($this->getIterator() as $fileInfo) {
+            $fn($fileInfo);
+        }
     }
 
     /**
@@ -467,7 +573,6 @@ final class FileFinder implements IteratorAggregate, Countable
     private function findInDirectory(string $dir): Iterator
     {
         $flags = RecursiveDirectoryIterator::SKIP_DOTS;
-
         if ($this->followLinks) {
             $flags |= RecursiveDirectoryIterator::FOLLOW_SYMLINKS;
         }
@@ -478,16 +583,16 @@ final class FileFinder implements IteratorAggregate, Countable
             private $rewindable;
 
             private $directorySeparator = '/';
-            private $ignoreUnreadableDirs;
+            private $skipUnreadableDirs;
 
-            public function __construct(string $path, int $flags, bool $ignoreUnreadableDirs = false)
+            public function __construct(string $path, int $flags, bool $skipUnreadableDirs = true)
             {
                 if ($flags & (self::CURRENT_AS_PATHNAME | self::CURRENT_AS_SELF)) {
                     throw new RuntimeException('This iterator only support returning current as fileInfo.');
                 }
 
-                $this->rootPath             = $path;
-                $this->ignoreUnreadableDirs = $ignoreUnreadableDirs;
+                $this->rootPath           = $path;
+                $this->skipUnreadableDirs = $skipUnreadableDirs;
                 parent::__construct($path, $flags);
 
                 if ('/' !== DIRECTORY_SEPARATOR && !($flags & self::UNIX_PATHS)) {
@@ -520,16 +625,15 @@ final class FileFinder implements IteratorAggregate, Countable
             {
                 try {
                     $children = parent::getChildren();
-
                     if ($children instanceof self) {
                         $children->rootPath             = $this->rootPath;
-                        $children->rewindable           = &$this->rewindable;
-                        $children->ignoreUnreadableDirs = $this->ignoreUnreadableDirs;
+                        $children->rewindable         = &$this->rewindable;
+                        $children->skipUnreadableDirs = $this->skipUnreadableDirs;
                     }
 
                     return $children;
                 } catch (UnexpectedValueException $e) {
-                    if ($this->ignoreUnreadableDirs) {
+                    if ($this->skipUnreadableDirs) {
                         return new RecursiveArrayIterator([]);
                     }
 
@@ -646,17 +750,16 @@ final class FileFinder implements IteratorAggregate, Countable
 
                 public function accept(): bool
                 {
-                    $pathname = $this->current()->getFilename();
-
+                    $filename = $this->current()->getFilename();
                     foreach ($this->notNames as $not) {
-                        if (fnmatch($not, $pathname)) {
+                        if ($not === $filename || fnmatch($not, $filename)) {
                             return false;
                         }
                     }
 
                     if ($this->names) {
                         foreach ($this->names as $need) {
-                            if (fnmatch($need, $pathname)) {
+                            if ($need === $filename || fnmatch($need, $filename)) {
                                 return true;
                             }
                         }
@@ -709,24 +812,22 @@ final class FileFinder implements IteratorAggregate, Countable
                 public function accept(): bool
                 {
                     $pathname = $this->current()->relativePathname;
-
                     if ('\\' === DIRECTORY_SEPARATOR) {
                         $pathname = str_replace('\\', '/', $pathname);
                     }
 
                     foreach ($this->notPaths as $not) {
-                        if (fnmatch($not, $pathname)) {
+                        if (FileFinder::matchPath($pathname, $not)) {
                             return false;
                         }
                     }
 
                     if ($this->paths) {
                         foreach ($this->paths as $need) {
-                            if (fnmatch($need, $pathname)) {
+                            if (FileFinder::matchPath($pathname, $need)) {
                                 return true;
                             }
                         }
-
                         return false;
                     }
 
@@ -736,5 +837,20 @@ final class FileFinder implements IteratorAggregate, Countable
         }
 
         return $iterator;
+    }
+
+    /**
+     * @param string $path
+     * @param string $pattern
+     *
+     * @return bool
+     */
+    public static function matchPath(string $path, string $pattern): bool
+    {
+        if (str_contains($pattern, '*') || str_contains($pattern, '[') || str_contains($pattern, '.')) {
+            return fnmatch($pattern, $path);
+        }
+
+        return str_contains($path, $pattern);
     }
 }

@@ -31,6 +31,7 @@ use function is_file;
 use function is_string;
 use function stream_get_contents;
 use function stream_get_meta_data;
+use function stream_set_blocking;
 use function strlen;
 use function trim;
 
@@ -353,12 +354,33 @@ class File extends FileSystem
 
     /**
      * @param resource $stream
+     * @param bool $blocking
+     *
+     * @return string
+     */
+    public static function streamReadAll($stream, bool $blocking = true): string
+    {
+        self::assertReadableStream($stream);
+
+        if ($blocking) {
+            return (string)stream_get_contents($stream);
+        }
+
+        // non-blocking read
+        if (stream_set_blocking($stream, false)) {
+            return (string)stream_get_contents($stream);
+        }
+        return '';
+    }
+
+    /**
+     * @param resource $stream
      * @param int      $length
      * @param int      $offset
      *
      * @return string
      */
-    public static function streamReadAll($stream, int $length = -1, int $offset = -1): string
+    public static function streamGetContents($stream, int $length = -1, int $offset = -1): string
     {
         self::assertReadableStream($stream);
 

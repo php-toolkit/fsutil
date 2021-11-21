@@ -10,6 +10,7 @@ use Toolkit\FsUtil\Exception\IOException;
 use function basename;
 use function copy;
 use function dirname;
+use function fclose;
 use function file_put_contents;
 use function fileatime;
 use function filectime;
@@ -17,6 +18,7 @@ use function filesize;
 use function filetype;
 use function finfo_file;
 use function finfo_open;
+use function fopen;
 use function is_file;
 use function is_readable;
 use function is_writable;
@@ -24,6 +26,8 @@ use function pathinfo;
 use function preg_match;
 use function stat;
 use function str_contains;
+use function stream_get_contents;
+use function stream_set_blocking;
 use function strrchr;
 use function strstr;
 use function trim;
@@ -129,6 +133,22 @@ trait FileOperateTrait
     public static function getStat(string $filename): array
     {
         return stat($filename);
+    }
+
+    /**
+     * @return string
+     */
+    public static function readStdinBody(): string
+    {
+        $text  = '';
+        $stdin = fopen('php://stdin', 'r');
+
+        if (stream_set_blocking($stdin, false)) {
+            $text = stream_get_contents($stdin);
+        }
+
+        fclose($stdin);
+        return $text;
     }
 
     /**
