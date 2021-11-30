@@ -32,7 +32,6 @@ use function is_string;
 use function stream_get_contents;
 use function stream_get_meta_data;
 use function stream_set_blocking;
-use function strlen;
 use function trim;
 
 /**
@@ -50,10 +49,6 @@ class File extends FileSystem
     public const FORMAT_JSON = 'json';
 
     public const FORMAT_INI = 'ini';
-
-    public const FORMAT_YML = 'yml';
-
-    public const FORMAT_YAML = 'yaml';
 
     /**********************************************************************************
      * config file load
