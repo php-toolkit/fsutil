@@ -22,29 +22,29 @@ use function json_encode;
 final class ModifyWatcher
 {
     /** @var string */
-    private $idFile;
+    private string $idFile;
 
     /** @var string[] */
-    private $watchDirs = [];
+    private array $watchDirs = [];
 
     /** @var string */
-    private $dirMd5;
+    private string $dirMd5 = '';
 
     /** @var string */
-    private $md5String;
+    private string $md5String = '';
 
     /** @var int */
-    private $fileCounter = 0;
+    private int $fileCounter = 0;
 
     /**
      * @var array 包含的文件名
      */
-    private $names = ['.php'];
+    private array $names = ['.php'];
 
     /**
      * @var array 排除的文件名
      */
-    private $notNames = [
+    private array $notNames = [
         '.gitignore',
         'LICENSE[.txt]', // 'LICENSE' 'LICENSE.txt'
     ];
@@ -52,24 +52,22 @@ final class ModifyWatcher
     /**
      * @var array 排除的目录名
      */
-    private $excludes = [];
+    private array $excludes = [];
 
     /** @var bool */
-    private $ignoreDotDirs = true;
+    private bool $ignoreDotDirs = true;
 
     /** @var bool */
-    private $ignoreDotFiles = true;
+    private bool $ignoreDotFiles = true;
 
     /**
      * ModifyWatcher constructor.
      *
-     * @param string|null $idFile
+     * @param string $idFile
      */
-    public function __construct(string $idFile = null)
+    public function __construct(string $idFile = '')
     {
-        if ($idFile) {
-            $this->idFile = $idFile;
-        }
+        $this->idFile = $idFile;
     }
 
     /**
@@ -85,11 +83,11 @@ final class ModifyWatcher
     }
 
     /**
-     * @param string|array $notNames
+     * @param array|string $notNames
      *
      * @return ModifyWatcher
      */
-    public function name($notNames): self
+    public function name(array|string $notNames): self
     {
         $this->notNames = array_merge($this->notNames, (array)$notNames);
 
@@ -97,11 +95,11 @@ final class ModifyWatcher
     }
 
     /**
-     * @param string|array $notNames
+     * @param array|string $notNames
      *
      * @return ModifyWatcher
      */
-    public function notName($notNames): self
+    public function notName(array|string $notNames): self
     {
         $this->notNames = array_merge($this->notNames, (array)$notNames);
 
@@ -109,11 +107,11 @@ final class ModifyWatcher
     }
 
     /**
-     * @param string|array $excludeDirs
+     * @param array|string $excludeDirs
      *
      * @return ModifyWatcher
      */
-    public function exclude($excludeDirs): self
+    public function exclude(array|string $excludeDirs): self
     {
         $this->excludes = array_merge($this->excludes, (array)$excludeDirs);
 
@@ -125,7 +123,7 @@ final class ModifyWatcher
      *
      * @return ModifyWatcher
      */
-    public function ignoreDotDirs($ignoreDotDirs): ModifyWatcher
+    public function ignoreDotDirs(mixed $ignoreDotDirs): ModifyWatcher
     {
         $this->ignoreDotDirs = (bool)$ignoreDotDirs;
 
@@ -137,18 +135,18 @@ final class ModifyWatcher
      *
      * @return ModifyWatcher
      */
-    public function ignoreDotFiles($ignoreDotFiles): ModifyWatcher
+    public function ignoreDotFiles(mixed $ignoreDotFiles): ModifyWatcher
     {
         $this->ignoreDotFiles = (bool)$ignoreDotFiles;
         return $this;
     }
 
     /**
-     * @param string|array $dirs
+     * @param array|string $dirs
      *
      * @return $this
      */
-    public function watch($dirs): self
+    public function watch(array|string $dirs): self
     {
         $this->watchDirs = array_merge($this->watchDirs, (array)$dirs);
 
@@ -158,11 +156,11 @@ final class ModifyWatcher
     /**
      * alias of the watch()
      *
-     * @param string|array $dirs
+     * @param array|string $dirs
      *
      * @return $this
      */
-    public function watchDir($dirs): self
+    public function watchDir(array|string $dirs): self
     {
         $this->watchDirs = array_merge($this->watchDirs, (array)$dirs);
 
@@ -201,7 +199,7 @@ final class ModifyWatcher
     /**
      * @return bool|string
      */
-    public function getMd5ByIdFile()
+    public function getMd5ByIdFile(): bool|string
     {
         if (!$file = $this->idFile) {
             return false;
@@ -228,7 +226,7 @@ final class ModifyWatcher
         }
 
         $this->dirMd5    = md5($this->md5String);
-        $this->md5String = null;
+        $this->md5String = '';
 
         if ($this->idFile) {
             file_put_contents($this->idFile, $this->dirMd5);

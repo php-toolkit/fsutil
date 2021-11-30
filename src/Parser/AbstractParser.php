@@ -115,7 +115,7 @@ abstract class AbstractParser
      *
      * @return string
      */
-    protected static function getImportFile(string $value, string $fileDir, $pathHandler = null): string
+    protected static function getImportFile(string $value, string $fileDir, callable $pathHandler = null): string
     {
         // eg: 'import#other.yaml'
         $importFile = trim(substr($value, 7));

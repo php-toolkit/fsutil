@@ -141,7 +141,7 @@ trait FileOperateTrait
     public static function readStdinBody(): string
     {
         $text  = '';
-        $stdin = fopen('php://stdin', 'r');
+        $stdin = fopen('php://stdin', 'rb');
 
         if (stream_set_blocking($stdin, false)) {
             $text = stream_get_contents($stdin);
@@ -189,7 +189,7 @@ trait FileOperateTrait
      * @throws FileSystemException
      * @throws FileNotFoundException
      */
-    public static function copy($source, $destination, $streamContext = null)
+    public static function copy($source, $destination, $streamContext = null): bool|int
     {
         if (null === $streamContext && !preg_match('/^https?:\/\//', $source)) {
             if (!is_file($source)) {

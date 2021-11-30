@@ -209,14 +209,14 @@ class File extends FileSystem
      * save contents to file use file_put_contents()
      *
      * @param string $filename
-     * @param string|array|resource  $data string, array(仅一维数组) 或者是 stream  资源
+     * @param string|array|resource|mixed  $data string, array(仅一维数组) 或者是 stream  资源
      * @param int    $flags
-     * @param null   $context
+     * @param resource|null   $context
      *
      * @return int
      * @see file_put_contents()
      */
-    public static function putContents(string $filename, $data, int $flags = 0, $context = null): int
+    public static function putContents(string $filename, mixed $data, int $flags = 0, $context = null): int
     {
         $number = file_put_contents($filename, $data, $flags, $context);
         if ($number === false) {
@@ -236,7 +236,7 @@ class File extends FileSystem
      *
      * @return int
      */
-    public static function save(string $filename, $data, int $flags = 0, $context = null): int
+    public static function save(string $filename, mixed $data, int $flags = 0, $context = null): int
     {
         return self::putContents($filename, $data, $flags, $context);
     }
@@ -247,11 +247,11 @@ class File extends FileSystem
      * @param string $filename
      * @param string|array|resource  $data
      * @param int $flags
-     * @param null|mixed $context
+     * @param null|resource $context
      *
      * @return int
      */
-    public static function mkdirSave(string $filename, $data, int $flags = 0, $context = null): int
+    public static function mkdirSave(string $filename, mixed $data, int $flags = 0, $context = null): int
     {
         if (!is_dir($dir = dirname($filename))) {
             self::mkdir($dir);
@@ -474,7 +474,7 @@ class File extends FileSystem
         bool $useIncludePath = false,
         $streamContext = null,
         int $curlTimeout = 5
-    ) {
+    ): bool|string {
         $isUrl = preg_match('/^https?:\/\//', $file);
         if (null === $streamContext && $isUrl) {
             $streamContext = @stream_context_create(['http' => ['timeout' => $curlTimeout]]);
@@ -524,16 +524,14 @@ class File extends FileSystem
     }
 
     /**
-     * @param $inFile
-     * @param $outFile
+     * @param array|string $inFile
+     * @param string $outFile
      *
-     * @return mixed
-     * @throws InvalidArgumentException
-     * @throws FileNotFoundException
+     * @return string
      */
-    public static function combine($inFile, $outFile)
+    public static function combine(array|string $inFile, string $outFile): string
     {
-        self::check($inFile);
+        // self::check($inFile);
 
         $data = '';
         if (is_array($inFile)) {
@@ -544,13 +542,10 @@ class File extends FileSystem
                     throw new FileNotFoundException('File: ' . $value . ' not exists!');
                 }
             }
-        }
-
-        /*if (is_string($inFile) && is_file($value)) {
-            $data .= trim( file_get_contents($inFile) );
         } else {
-            Trigger::error('文件'.$value.'不存在！！');
-        }*/
+            self::check($inFile);
+            $data = trim(file_get_contents($inFile));
+        }
 
         $preg_arr = [
             '/\/\*.*?\*\/\s*/is',        // 去掉所有多行注释/* .... */

@@ -208,12 +208,12 @@ abstract class FileSystem
 
     /**
      * @param string            $file
-     * @param null|string|array $ext eg: 'jpg|gif'
+     * @param string|array $ext eg: 'jpg|gif'
      *
      * @throws FileNotFoundException
      * @throws InvalidArgumentException
      */
-    public static function check(string $file, $ext = null): void
+    public static function check(string $file, array|string $ext = ''): void
     {
         if (!$file || !file_exists($file)) {
             throw new FileNotFoundException("File $file not exists！");

@@ -106,13 +106,13 @@ class Directory extends FileSystem
      * 获得目录下的文件，可选择类型、是否遍历子文件夹
      *
      * @param string       $dir       string 目标目录
-     * @param string|array $ext       array('css','html','php') css|html|php
+     * @param array|string $ext       array('css','html','php') css|html|php
      * @param bool         $recursive int|bool 是否包含子目录
      *
      * @return array
      * @throws FileNotFoundException
      */
-    public static function simpleInfo(string $dir, $ext = null, bool $recursive = false): array
+    public static function simpleInfo(string $dir, array|string $ext = '', bool $recursive = false): array
     {
         $list = [];
         $dir  = self::pathFormat($dir);
@@ -157,7 +157,7 @@ class Directory extends FileSystem
      */
     public static function getFiles(
         string $path,
-        $ext = null,
+        array|string $ext = '',
         bool $recursive = false,
         string $parent = '',
         array $list = []
@@ -197,7 +197,7 @@ class Directory extends FileSystem
      * @throws InvalidArgumentException
      * @throws FileNotFoundException
      */
-    public static function getFilesInfo(string $path, $ext = null, bool $recursive = false, array &$list = []): array
+    public static function getFilesInfo(string $path, array|string $ext = '', bool $recursive = false, array &$list = []): array
     {
         $path = self::pathFormat($path);
         if (!is_dir($path)) {

@@ -90,7 +90,7 @@ trait FileSystemFuncTrait
         }
 
         $meta = stream_get_meta_data($stream);
-        if (strpos($meta['mode'], 'w') === false && strpos($meta['mode'], '+') === false) {
+        if (!str_contains($meta['mode'], 'w') && !str_contains($meta['mode'], '+')) {
             throw new InvalidArgumentException('Expected a writable stream');
         }
     }
@@ -180,14 +180,14 @@ trait FileSystemFuncTrait
      *
      * @from Symfony-filesystem
      *
-     * @param string|array|Traversable $files     A filename, an array of files, or a \Traversable instance to change mode
+     * @param Traversable|array|string $files     A filename, an array of files, or a \Traversable instance to change mode
      * @param int                      $mode      The new mode (octal)
      * @param int                      $umask     The mode mask (octal)
      * @param bool                     $recursive Whether change the mod recursively or not
      *
      * @throws IOException When the change fail
      */
-    public static function chmod($files, int $mode, int $umask = 0000, bool $recursive = false): void
+    public static function chmod(Traversable|array|string $files, int $mode, int $umask = 0000, bool $recursive = false): void
     {
         foreach (Arr::toIterator($files) as $file) {
             if (true !== @chmod($file, $mode & ~$umask)) {
@@ -205,13 +205,13 @@ trait FileSystemFuncTrait
      *
      * @from Symfony-filesystem
      *
-     * @param string|array|Traversable $files     A filename, an array of files, or a \Traversable instance to change owner
+     * @param Traversable|array|string $files     A filename, an array of files, or a \Traversable instance to change owner
      * @param string                   $user      The new owner user name
      * @param bool                     $recursive Whether change the owner recursively or not
      *
      * @throws IOException When the change fail
      */
-    public static function chown($files, string $user, bool $recursive = false): void
+    public static function chown(Traversable|array|string $files, string $user, bool $recursive = false): void
     {
         foreach (Arr::toIterator($files) as $file) {
             if ($recursive && is_dir($file) && !is_link($file)) {

@@ -89,7 +89,7 @@ class IniParser extends AbstractParser
                     continue;
                 }
 
-                if (0 === strpos($item, self::IMPORT_KEY . '#')) {
+                if (str_starts_with($item, self::IMPORT_KEY . '#')) {
                     $importFile = self::getImportFile($item, $fileDir, $pathHandler);
 
                     // $importFile is file
