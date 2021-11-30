@@ -5,7 +5,7 @@
 [![Latest Stable Version](http://img.shields.io/packagist/v/toolkit/fsutil.svg)](https://packagist.org/packages/toolkit/fsutil)
 [![Actions Status](https://github.com/php-toolkit/fsutil/workflows/Unit-tests/badge.svg)](https://github.com/php-toolkit/fsutil/actions)
 
-Some useful filesystem util for php
+Some useful file system util for php
 
 - basic filesystem operation
 - file read/write operation
