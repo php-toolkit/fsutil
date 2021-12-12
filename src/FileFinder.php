@@ -86,11 +86,21 @@ final class FileFinder implements IteratorAggregate, Countable
     /** @var array */
     private array $dirs = [];
 
-    /** @var array */
+    /**
+     * File,dir name match.
+     *
+     * eg: '.php' '*.php' 'test.php'
+     *
+     * @var array
+     */
     private array $names = [];
 
     /**
-     * @var array exclude file/dir names
+     * File,dir name exclude
+     *
+     * eg: '.php' '*.php' 'test.php'
+     *
+     * @var array
      */
     private array $notNames = [];
 
@@ -516,7 +526,7 @@ final class FileFinder implements IteratorAggregate, Countable
     }
 
     /**
-     * @param callable(\SplFileInfo) $fn
+     * @param callable(SplFileInfo): void $fn
      */
     public function each(callable $fn): void
     {
@@ -529,8 +539,8 @@ final class FileFinder implements IteratorAggregate, Countable
      * Retrieve an external iterator
      *
      * @link http://php.net/manual/en/iteratoraggregate.getiterator.php
-     * @return Iterator|SplFileInfo[] An iterator
-     * @throws LogicException
+     * @return Traversable An Traversable
+     * @psalm-return SplFileInfo[]
      */
     public function getIterator(): Traversable
     {
@@ -580,7 +590,7 @@ final class FileFinder implements IteratorAggregate, Countable
             private string $subPath = '';
             private bool|null $rewindable = null;
 
-            private string $directorySeparator = '/';
+            private string $directorySep = '/';
             private bool $skipUnreadableDirs;
 
             public function __construct(string $path, int $flags, bool $skipUnreadableDirs = true)
@@ -594,7 +604,7 @@ final class FileFinder implements IteratorAggregate, Countable
                 parent::__construct($path, $flags);
 
                 if ('/' !== DIRECTORY_SEPARATOR && !($flags & self::UNIX_PATHS)) {
-                    $this->directorySeparator = DIRECTORY_SEPARATOR;
+                    $this->directorySep = DIRECTORY_SEPARATOR;
                 }
             }
 
@@ -605,13 +615,13 @@ final class FileFinder implements IteratorAggregate, Countable
                 }
 
                 if ('' !== $subPathname) {
-                    $subPathname .= $this->directorySeparator;
+                    $subPathname .= $this->directorySep;
                 }
 
                 $subPathname .= $this->getFilename();
 
                 // $fileInfo = new \SplFileInfo($this->getPathname());
-                $fileInfo = new SplFileInfo($this->rootPath . $this->directorySeparator . $subPathname);
+                $fileInfo = new SplFileInfo($this->rootPath . $this->directorySep . $subPathname);
                 // add props
                 $fileInfo->relativePath     = $this->subPath;
                 $fileInfo->relativePathname = $subPathname;
@@ -619,7 +629,7 @@ final class FileFinder implements IteratorAggregate, Countable
                 return $fileInfo;
             }
 
-            public function getChildren()
+            public function getChildren(): RecursiveDirectoryIterator
             {
                 try {
                     $children = parent::getChildren();
@@ -693,9 +703,13 @@ final class FileFinder implements IteratorAggregate, Countable
                     return $this->iterator->hasChildren();
                 }
 
-                public function getChildren(): RecursiveIterator|FilterIterator
+                public function getChildren(): ?RecursiveIterator
                 {
-                    $children = new self($this->iterator->getChildren(), []);
+                    if (!$child = $this->iterator->getChildren()) {
+                        return null;
+                    }
+
+                    $children = new self($child, []);
                     // sync
                     $children->excludes = $this->excludes;
 
