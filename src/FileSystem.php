@@ -26,6 +26,7 @@ use function is_dir;
 use function is_file;
 use function is_string;
 use function preg_match;
+use function str_ends_with;
 use function str_ireplace;
 use function strlen;
 use function strpos;
@@ -127,6 +128,10 @@ abstract class FileSystem
 
         if (!$subPaths) {
             return $basePath;
+        }
+
+        if (str_ends_with($basePath, '/')) {
+            $basePath = substr($basePath, 0, -1);
         }
 
         return $basePath . DIRECTORY_SEPARATOR . implode(DIRECTORY_SEPARATOR, $subPaths);
