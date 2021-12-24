@@ -2,12 +2,15 @@
 
 namespace Toolkit\FsUtil\Traits;
 
+use Closure;
 use DirectoryIterator;
 use LogicException;
 use RecursiveIteratorIterator;
+use SplFileInfo;
 use Throwable;
 use Toolkit\FsUtil\Exception\FileNotFoundException;
 use Toolkit\FsUtil\Exception\FileSystemException;
+use Toolkit\FsUtil\FileSystem;
 use function closedir;
 use function opendir;
 use function readdir;
@@ -20,23 +23,13 @@ use function readdir;
 trait DirOperateTrait
 {
     /**
+     * Usage:
+     *
      * ```php
-     * $filter = function ($current, $key, $iterator) {
-     *  // \SplFileInfo $current
-     *  // Skip hidden files and directories.
-     *  if ($current->getFilename()[0] === '.') {
-     *      return false;
-     *  }
-     *  if ($current->isDir()) {
-     *      // Only recurse into intended subdirectories.
-     *      return $current->getFilename() !== '.git';
-     *  }
-     *      // Only consume files of interest.
-     *      return strpos($current->getFilename(), '.php') !== false;
-     * };
+     * $filter = Dir::getPhpFileFilter();
      *
      * // $info is instance of \SplFileInfo
-     * foreach(Directory::getRecursiveIterator($srcDir, $filter) as $info) {
+     * foreach(Dir::getRecursiveIterator($srcDir, $filter) as $info) {
      *    // $info->getFilename(); ...
      * }
      * ```
@@ -45,11 +38,33 @@ trait DirOperateTrait
      * @param callable $filter
      *
      * @return RecursiveIteratorIterator
-     * @throws LogicException
      */
     public static function getRecursiveIterator(string $srcDir, callable $filter): RecursiveIteratorIterator
     {
-        return self::getIterator($srcDir, $filter);
+        return FileSystem::getIterator($srcDir, $filter);
+    }
+
+    /**
+     * @return Closure
+     */
+    public static function getPhpFileFilter(): callable
+    {
+        return static function (SplFileInfo $f) {
+            $name = $f->getFilename();
+
+            // Skip hidden files and directories.
+            if (str_starts_with($name, '.')) {
+                return false;
+            }
+
+            // go on read sub-dir
+            if ($f->isDir()) {
+                return true;
+            }
+
+            // php file
+            return $f->isFile() && str_ends_with($name, '.php');
+        };
     }
 
     /**

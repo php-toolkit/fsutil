@@ -9,7 +9,9 @@
 
 namespace Toolkit\FsUtil;
 
+use Closure;
 use InvalidArgumentException;
+use SplFileInfo;
 use Toolkit\FsUtil\Exception\FileNotFoundException;
 use Toolkit\FsUtil\Traits\DirOperateTrait;
 use function basename;

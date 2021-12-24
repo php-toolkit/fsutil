@@ -9,6 +9,7 @@
 
 namespace Toolkit\FsUtil;
 
+use FilesystemIterator;
 use InvalidArgumentException;
 use RecursiveCallbackFilterIterator;
 use RecursiveDirectoryIterator;
@@ -236,19 +237,34 @@ abstract class FileSystem
     }
 
     /**
-     * @param string   $srcDir
+     * Usage:
+     *
+     * ```php
+     * $filter = Dir::getPhpFileFilter();
+     *
+     * // $info is instance of \SplFileInfo
+     * foreach(Dir::getIterator($srcDir, $filter) as $info) {
+     *    // $info->getFilename(); ...
+     * }
+     * ```
+     *
+     * @param string $srcDir
      * @param callable $filter
+     * @param int $flags
      *
      * @return RecursiveIteratorIterator
-     * @throws InvalidArgumentException
      */
-    public static function getIterator(string $srcDir, callable $filter): RecursiveIteratorIterator
+    public static function getIterator(
+        string $srcDir,
+        callable $filter,
+        int $flags = FilesystemIterator::KEY_AS_PATHNAME | FilesystemIterator::CURRENT_AS_FILEINFO
+    ): RecursiveIteratorIterator
     {
         if (!$srcDir || !file_exists($srcDir)) {
             throw new InvalidArgumentException('Please provide a exists source directory.');
         }
 
-        $directory      = new RecursiveDirectoryIterator($srcDir);
+        $directory      = new RecursiveDirectoryIterator($srcDir, $flags);
         $filterIterator = new RecursiveCallbackFilterIterator($directory, $filter);
 
         return new RecursiveIteratorIterator($filterIterator);
