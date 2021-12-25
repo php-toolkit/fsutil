@@ -25,7 +25,6 @@ use function implode;
 use function is_array;
 use function is_dir;
 use function is_file;
-use function is_string;
 use function preg_match;
 use function str_ends_with;
 use function str_ireplace;
@@ -51,12 +50,12 @@ abstract class FileSystem
      */
     public static function isAbsPath(string $path): bool
     {
-        if (!$path || !is_string($path)) {
+        if (!$path) {
             return false;
         }
 
         if (str_starts_with($path, '/') ||  // linux/mac
-            1 === preg_match('#^[a-z]:[\/|\\\].+#i', $path) // windows
+            1 === preg_match('#^[a-z]:[/|\\\].+#i', $path) // windows
         ) {
             return true;
         }

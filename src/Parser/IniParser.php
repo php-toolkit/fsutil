@@ -39,7 +39,6 @@ class IniParser extends AbstractParser
      * @param string        $fileDir     When the second param is true, this param is valid.
      *
      * @return array
-     * @throws InvalidArgumentException
      * @throws UnexpectedValueException
      */
     protected static function doParse(
