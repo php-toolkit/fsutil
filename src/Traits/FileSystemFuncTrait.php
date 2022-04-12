@@ -34,7 +34,6 @@ use function rmdir;
 use function str_replace;
 use function stream_get_meta_data;
 use function strlen;
-use function strpos;
 use const DIRECTORY_SEPARATOR;
 
 /**
@@ -226,6 +225,18 @@ trait FileSystemFuncTrait
                 throw new IOException(sprintf('Failed to chown file "%s".', $file));
             }
         }
+    }
+
+    /**
+     * clear invalid sep and will parse ~ as user home dir.
+     *
+     * @param string $path
+     *
+     * @return string
+     */
+    public static function expandPath(string $path): string
+    {
+        $path = realpath($path);
     }
 
     /**
