@@ -682,7 +682,7 @@ final class FileFinder implements IteratorAggregate, Countable
             private string $directorySep = '/';
             private bool $skipUnreadableDirs;
 
-            public function __construct(string $path, int $flags, bool $recursive, bool $skipUnreadableDirs = true)
+            public function __construct(string $path, int $flags, bool $recursive = true, bool $skipUnreadableDirs = true)
             {
                 if ($flags & (self::CURRENT_AS_PATHNAME | self::CURRENT_AS_SELF)) {
                     throw new RuntimeException('This iterator only support returning current as fileInfo.');
@@ -733,6 +733,7 @@ final class FileFinder implements IteratorAggregate, Countable
             {
                 try {
                     $children = parent::getChildren();
+                    
                     if ($children instanceof self) {
                         $children->rootPath           = $this->rootPath;
                         $children->rewindable         = &$this->rewindable;
