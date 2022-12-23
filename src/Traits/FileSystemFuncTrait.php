@@ -24,6 +24,7 @@ use function error_get_last;
 use function explode;
 use function function_exists;
 use function get_resource_type;
+use function getcwd;
 use function implode;
 use function is_dir;
 use function is_resource;
@@ -236,7 +237,7 @@ trait FileSystemFuncTrait
      */
     public static function expandPath(string $path): string
     {
-        $path = realpath($path);
+        return realpath($path);
     }
 
     /**
@@ -259,6 +260,11 @@ trait FileSystemFuncTrait
         // ~: is user home dir in OS
         if ($parts[0] === '~') {
             $parts[0] = OS::getUserHomeDir();
+        }
+
+        // `.` is relative path
+        if ($parts[0] === '.') {
+            $parts[0] = (string)getcwd();
         }
 
         $absolutes = [];

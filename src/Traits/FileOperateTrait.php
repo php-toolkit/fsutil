@@ -26,6 +26,7 @@ use function pathinfo;
 use function preg_match;
 use function stat;
 use function str_contains;
+use function str_ends_with;
 use function stream_get_contents;
 use function stream_set_blocking;
 use function strrchr;
@@ -75,6 +76,20 @@ trait FileOperateTrait
         $suffix = strrchr($filename, '.');
 
         return $clearPoint ? trim($suffix, '.') : $suffix;
+    }
+
+    /**
+     * @param string $filePath file path
+     * @param string $suffix suffix name, with '.'. eg: .json
+     *
+     * @return string
+     */
+    public static function appendSuffix(string $filePath, string $suffix): string
+    {
+        if (!str_ends_with($filePath, $suffix)) {
+            $filePath .= $suffix;
+        }
+        return $filePath;
     }
 
     /**
