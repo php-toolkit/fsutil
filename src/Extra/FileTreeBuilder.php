@@ -8,6 +8,7 @@ use Toolkit\Stdlib\Helper\Assert;
 use Toolkit\Stdlib\Obj\AbstractObj;
 use Toolkit\Stdlib\Str;
 use function array_merge;
+use function is_int;
 use function printf;
 use function println;
 use function trim;
@@ -294,6 +295,10 @@ class FileTreeBuilder extends AbstractObj
     public function tplFiles(array $tpl2dstMap, array $tplVars = []): self
     {
         foreach ($tpl2dstMap as $tplFile => $dstFile) {
+            if (!$tplFile || is_int($tplFile)) {
+                $tplFile = $dstFile;
+            }
+
             $this->tplFile($tplFile, $dstFile, $tplVars);
         }
 
