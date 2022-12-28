@@ -25,14 +25,35 @@ class FsTest extends TestCase
         foreach ($tests as $case) {
             $this->assertTrue(FS::isAbsPath($case));
             $this->assertTrue(FS::isAbsolutePath($case));
+            $this->assertFalse(FS::isRelative($case));
         }
+
+        $this->assertTrue(FS::isRelative('./'));
+        $this->assertTrue(FS::isRelative('./abc'));
     }
 
     public function testBasicFsMethods(): void
     {
+        // join
         $this->assertEquals('/ab', FS::join('/ab'));
         $this->assertEquals('/ab/d', FS::join('/ab', '', 'd'));
         $this->assertEquals('/ab/d/e', FS::join('/ab', 'd', 'e'));
+        $this->assertEquals('/ab', FS::join('/ab', '.'));
+        $this->assertEquals('/ab', FS::join('/ab', './'));
+        $this->assertEquals('/ab/cd', FS::join('/ab', './cd'));
+    }
+
+    public function testIsExclude_isInclude(): void
+    {
+        $this->assertTrue(FS::isInclude('./abc.php', []));
+        $this->assertTrue(FS::isInclude('./abc.php', ['*']));
+        $this->assertTrue(FS::isInclude('./abc.php', ['*.php']));
+        $this->assertFalse(FS::isInclude('./abc.php', ['*.xml']));
+
+        $this->assertFalse(FS::isExclude('./abc.php', []));
+        $this->assertTrue(FS::isExclude('./abc.php', ['*']));
+        $this->assertTrue(FS::isExclude('./abc.php', ['*.php']));
+        $this->assertFalse(FS::isExclude('./abc.php', ['*.yml']));
     }
 
     public function testRealpath(): void

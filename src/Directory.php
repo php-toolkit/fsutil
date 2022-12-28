@@ -9,11 +9,10 @@
 
 namespace Toolkit\FsUtil;
 
-use Closure;
 use InvalidArgumentException;
-use SplFileInfo;
 use Toolkit\FsUtil\Exception\FileNotFoundException;
 use Toolkit\FsUtil\Traits\DirOperateTrait;
+use function array_merge;
 use function basename;
 use function glob;
 use function implode;
@@ -23,6 +22,7 @@ use function is_file;
 use function preg_match;
 use function strlen;
 use function trim;
+use const GLOB_BRACE;
 
 /**
  * Class Directory
@@ -37,9 +37,9 @@ class Directory extends FileSystem
      * 只获得目录结构
      *
      * @param string $path
-     * @param int    $pid
-     * @param bool   $son
-     * @param array  $list
+     * @param int $pid
+     * @param bool $son
+     * @param array $list
      *
      * @return array
      * @throws FileNotFoundException
@@ -74,9 +74,9 @@ class Directory extends FileSystem
 
     /**
      * @param string $path
-     * @param bool   $loop
-     * @param null   $parent
-     * @param array  $list
+     * @param bool $loop
+     * @param null $parent
+     * @param array $list
      *
      * @return array
      */
@@ -107,9 +107,9 @@ class Directory extends FileSystem
     /**
      * 获得目录下的文件，可选择类型、是否遍历子文件夹
      *
-     * @param string       $dir       string 目标目录
-     * @param array|string $ext       array('css','html','php') css|html|php
-     * @param bool         $recursive int|bool 是否包含子目录
+     * @param string $dir string 目标目录
+     * @param array|string $ext array('css','html','php') css|html|php
+     * @param bool $recursive int|bool 是否包含子目录
      *
      * @return array
      * @throws FileNotFoundException
@@ -148,11 +148,11 @@ class Directory extends FileSystem
     /**
      * 获得目录下的文件，可选择类型、是否遍历子文件夹
      *
-     * @param string       $path      string 目标目录
-     * @param array|string $ext       array('css','html','php') css|html|php
-     * @param bool         $recursive 是否包含子目录
-     * @param string       $parent
-     * @param array        $list
+     * @param string $path string 目标目录
+     * @param array|string $ext array('css','html','php') css|html|php
+     * @param bool $recursive 是否包含子目录
+     * @param string $parent
+     * @param array $list
      *
      * @return array
      * @throws FileNotFoundException
@@ -190,10 +190,10 @@ class Directory extends FileSystem
     /**
      * 获得目录下的文件以及详细信息，可选择类型、是否遍历子文件夹
      *
-     * @param string       $path      string 目标目录
-     * @param array|string $ext       array('css','html','php') css|html|php
-     * @param bool         $recursive 是否包含子目录
-     * @param array        $list
+     * @param string $path string 目标目录
+     * @param array|string $ext array('css','html','php') css|html|php
+     * @param bool $recursive 是否包含子目录
+     * @param array $list
      *
      * @return array
      * @throws InvalidArgumentException
@@ -230,8 +230,8 @@ class Directory extends FileSystem
      * 支持层级目录的创建
      *
      * @param string $path
-     * @param int    $mode
-     * @param bool   $recursive
+     * @param int $mode
+     * @param bool $recursive
      *
      * @return bool
      */
@@ -267,42 +267,78 @@ class Directory extends FileSystem
      *
      * @param string $oldDir
      * @param string $newDir
+     * @param array $options = [
+     *     'skipExist' => true,
+     *     'beforeFn' => function (): bool { },
+     *     'afterFn' => function (): void { },
+     * ]
      *
      * @return bool
      */
-    public static function copy(string $oldDir, string $newDir): bool
+    public static function copy(string $oldDir, string $newDir, array $options = []): bool
     {
-        $oldDir = self::pathFormat($oldDir);
-        $newDir = self::pathFormat($newDir);
-
         if (!is_dir($oldDir)) {
             throw new FileNotFoundException('copy failed：' . $oldDir . ' does not exist！');
         }
 
-        self::create($newDir);
-        foreach (glob($oldDir . '*') as $v) {
-            $newFile = $newDir . basename($v);//文件
-
-            //文件存在，跳过复制它
-            if (file_exists($newFile)) {
-                continue;
-            }
-
-            if (is_dir($v)) {
-                self::copy($v, $newFile);
-            } else {
-                copy($v, $newFile);//是文件就复制过来
-                @chmod($newFile, 0664);// 权限 0777
-            }
-        }
+        self::doCopy($oldDir, $newDir, array_merge([
+            'skipExist' => true,
+            'beforeFn'  => null,
+            'afterFn'   => null,
+        ], $options));
 
         return true;
     }
 
     /**
+     * @param string $oldDir
+     * @param string $newDir
+     * @param array $options
+     *
+     * @return void
+     */
+    private static function doCopy(string $oldDir, string $newDir, array $options): void
+    {
+        self::create($newDir);
+        $beforeFn = $options['beforeFn'];
+
+        // use '{,.}*' match hidden files
+        foreach (glob($oldDir . '/{,.}*', GLOB_BRACE) as $old) {
+            $name = basename($old);
+            if ($name === '.' || $name === '..') {
+                continue;
+            }
+
+            $new = self::joinPath($newDir, $name);
+
+            if (is_dir($old)) {
+                self::doCopy($old, $new, $options);
+                continue;
+            }
+
+            // return false to skip copy
+            if ($beforeFn && !$beforeFn($old)) {
+                continue;
+            }
+
+            if ($options['skipExist'] && file_exists($new)) {
+                continue;
+            }
+
+            // do copy
+            copy($old, $new);
+            @chmod($new, 0664); // 权限 0777
+
+            if ($afterFn = $options['afterFn']) {
+                $afterFn($new);
+            }
+        }
+    }
+
+    /**
      * 删除目录及里面的文件
      *
-     * @param string  $path
+     * @param string $path
      * @param boolean $delSelf 默认最后删掉自己
      *
      * @return bool

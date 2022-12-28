@@ -196,15 +196,13 @@ trait FileOperateTrait
     }
 
     /**
-     * @param      $source
-     * @param      $destination
-     * @param null $streamContext
+     * @param string $source
+     * @param string $destination
+     * @param resource|null $streamContext
      *
-     * @return bool|int
-     * @throws FileSystemException
-     * @throws FileNotFoundException
+     * @return bool
      */
-    public static function copy($source, $destination, $streamContext = null): bool|int
+    public static function copy(string $source, string $destination, $streamContext = null): bool
     {
         if (null === $streamContext && !preg_match('/^https?:\/\//', $source)) {
             if (!is_file($source)) {
@@ -214,7 +212,7 @@ trait FileOperateTrait
             return copy($source, $destination);
         }
 
-        return @file_put_contents($destination, self::getContentsV2($source, false, $streamContext));
+        return (bool)file_put_contents($destination, self::getContentsV2($source, false, $streamContext));
     }
 
 }

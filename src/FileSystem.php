@@ -21,6 +21,7 @@ use function array_filter;
 use function array_map;
 use function count;
 use function file_exists;
+use function fnmatch;
 use function implode;
 use function is_array;
 use function is_dir;
@@ -28,6 +29,7 @@ use function is_file;
 use function preg_match;
 use function str_ends_with;
 use function str_ireplace;
+use function str_starts_with;
 use function strlen;
 use function strpos;
 use function substr;
@@ -82,6 +84,64 @@ abstract class FileSystem
     /**
      * @param string $path
      *
+     * @return bool
+     */
+    public static function isRelative(string $path): bool
+    {
+        return !self::isAbsPath($path);
+    }
+
+    /**
+     * @param string $path
+     * @param array $patterns
+     *
+     * @return bool
+     */
+    public static function isExclude(string $path, array $patterns): bool
+    {
+        if (!$patterns) {
+            return false;
+        }
+
+        foreach ($patterns as $pattern) {
+            if ($pattern === '*' || $pattern === '**/*') {
+                return true;
+            }
+
+            if (fnmatch($pattern, $path)) {
+                return true;
+            }
+        }
+        return false;
+    }
+
+    /**
+     * @param string $path
+     * @param array $patterns
+     *
+     * @return bool
+     */
+    public static function isInclude(string $path, array $patterns): bool
+    {
+        if (!$patterns) {
+            return true;
+        }
+
+        foreach ($patterns as $pattern) {
+            if ($pattern === '*' || $pattern === '**/*') {
+                return true;
+            }
+
+            if (fnmatch($pattern, $path)) {
+                return true;
+            }
+        }
+        return false;
+    }
+
+    /**
+     * @param string $path
+     *
      * @return string
      */
     public static function getAbsPath(string $path): string
@@ -90,7 +150,7 @@ abstract class FileSystem
     }
 
     /**
-     * 转换为标准的路径结构
+     * path format. always end /
      *
      * @param string $dirName
      *
@@ -104,6 +164,8 @@ abstract class FileSystem
     }
 
     /**
+     * Join paths
+     *
      * @param string $basePath
      * @param string ...$subPaths
      *
@@ -115,6 +177,8 @@ abstract class FileSystem
     }
 
     /**
+     * Join paths
+     *
      * @param string $basePath
      * @param string ...$subPaths
      *
@@ -122,16 +186,20 @@ abstract class FileSystem
      */
     public static function joinPath(string $basePath, string ...$subPaths): string
     {
+        if (str_ends_with($basePath, '/')) {
+            $basePath = substr($basePath, 0, -1);
+        }
+
         $subPaths = array_filter(array_map(static function ($path) {
-            return trim($path, '/\\ ');
+            if ($path === '.' || $path === './') {
+                return '';
+            }
+
+            return trim(str_starts_with($path, './') ? substr($path, 2) : $path, '/\\ ');
         }, $subPaths), 'strlen');
 
         if (!$subPaths) {
             return $basePath;
-        }
-
-        if (str_ends_with($basePath, '/')) {
-            $basePath = substr($basePath, 0, -1);
         }
 
         return $basePath . DIRECTORY_SEPARATOR . implode(DIRECTORY_SEPARATOR, $subPaths);
@@ -216,7 +284,6 @@ abstract class FileSystem
      * @param string|array $ext eg: 'jpg|gif'
      *
      * @throws FileNotFoundException
-     * @throws InvalidArgumentException
      */
     public static function check(string $file, array|string $ext = ''): void
     {
