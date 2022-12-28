@@ -12,6 +12,7 @@ Some useful file system util for php
 - directory operation
 - file modify watcher
 - files finder
+- file tree builder
 
 ## Install
 
@@ -26,7 +27,7 @@ composer require toolkit/fsutil
 ### File Finder
 
 ```php
-use Toolkit\FsUtil\FileFinder;
+use Toolkit\FsUtil\Extra\FileFinder;
 
 $finder = FileFinder::create()
     ->files()
@@ -43,10 +44,43 @@ foreach ($finder as $file) {
 }
 ```
 
+### File Tree Builder
+
+`FileTreeBuilder` - can be quickly create dirs and files, copy dir and files.
+
+```php
+use Toolkit\FsUtil\Extra\FileTreeBuilder;
+
+$ftb = FileTreeBuilder::new()
+    ->setWorkdir($workDir)
+    ->setShowMsg(true);
+
+$ftb->copyDir('/path/to/dir', './') // copy dir to $workDir
+    ->copy('/tplDir/some.file', 'new-file.txt') // copy file to $workDir/new-file.txt
+    // make new dir $workDir/new-dir
+    ->dir('new-dir', function (FileTreeBuilder $ftb) {
+        $ftb->file('sub-file.txt') // create file on $workDir/new-dir
+            ->dirs('sub-dir1', 'sub-dir2'); // make dirs on $workDir/new-dir
+    })
+    ->file('new-file1.md', 'contents'); // create file on $workDir
+```
+
+Will create file tree like:
+
+```text
+./
+ |-- new-file.txt
+ |-- new-dir/
+     |-- sub-file.txt
+     |-- sub-dir1/
+     |-- sub-dir2/
+ |-- new-file1.md
+```
+
 ### Modify Watcher
 
 ```php
-use Toolkit\FsUtil\ModifyWatcher;
+use Toolkit\FsUtil\Extra\ModifyWatcher;
 
 $w  = new ModifyWatcher();
 $ret = $w
