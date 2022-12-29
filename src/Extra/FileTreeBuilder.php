@@ -254,6 +254,22 @@ class FileTreeBuilder extends AbstractObj
     }
 
     /**
+     * Render template files by glob match.
+     *
+     * @param string $pattern
+     * @param array $tplVars
+     *
+     * @return $this
+     */
+    public function globRender(string $pattern, array $tplVars = []): self
+    {
+        foreach (glob($pattern) as $tplFile) {
+            $this->tplFile($tplFile, '', $tplVars);
+        }
+        return $this;
+    }
+
+    /**
      * Create file from a template file
      *
      * @param string $tplFile tpl file path, relative the tplDir.
