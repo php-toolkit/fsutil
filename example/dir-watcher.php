@@ -7,9 +7,9 @@
  * Time: 21:40
  */
 
-use Toolkit\FsUtil\ModifyWatcher;
+use Toolkit\FsUtil\Extra\ModifyWatcher;
 
-require dirname(__DIR__) . '/test/boot.php';
+require dirname(__DIR__) . '/test/bootstrap.php.php';
 
 $mw  = new ModifyWatcher();
 $ret = $mw

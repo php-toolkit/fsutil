@@ -48,11 +48,13 @@ class FsTest extends TestCase
         $this->assertTrue(FS::isInclude('./abc.php', []));
         $this->assertTrue(FS::isInclude('./abc.php', ['*']));
         $this->assertTrue(FS::isInclude('./abc.php', ['*.php']));
+        $this->assertTrue(FS::isInclude('path/to/abc.php', ['*.php']));
         $this->assertFalse(FS::isInclude('./abc.php', ['*.xml']));
 
         $this->assertFalse(FS::isExclude('./abc.php', []));
         $this->assertTrue(FS::isExclude('./abc.php', ['*']));
         $this->assertTrue(FS::isExclude('./abc.php', ['*.php']));
+        $this->assertTrue(FS::isExclude('path/to/abc.php', ['*.php']));
         $this->assertFalse(FS::isExclude('./abc.php', ['*.yml']));
     }
 

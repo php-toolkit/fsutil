@@ -8,7 +8,7 @@
 
 use Toolkit\FsUtil\FileFinder;
 
-require dirname(__DIR__) . '/test/boot.php';
+require dirname(__DIR__) . '/test/bootstrap.php';
 
 // var_dump(fnmatch('.*', ".gitkeep"));die;
 // var_dump(glob(__DIR__ . '/{t,T}ests', GLOB_BRACE | GLOB_ONLYDIR));
