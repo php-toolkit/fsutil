@@ -9,8 +9,8 @@ use Toolkit\Stdlib\Obj\AbstractObj;
 use Toolkit\Stdlib\Str;
 use function array_merge;
 use function is_int;
-use function printf;
 use function println;
+use function str_replace;
 use function trim;
 
 /**
@@ -59,6 +59,13 @@ class FileTreeBuilder extends AbstractObj
     public string $tplDir = '';
 
     /**
+     * Callable on after file copied.
+     *
+     * @var callable(string $newFile): void
+     */
+    public $afterCopy;
+
+    /**
      * @param string $dir
      *
      * @return $this
@@ -85,15 +92,41 @@ class FileTreeBuilder extends AbstractObj
         if ($afterFn !== null) {
             $afterFn($dstFile);
         }
+
+        if ($fn = $this->afterCopy) {
+            $fn($dstFile);
+        }
+
         return $this;
     }
 
     /**
+     * Copy all files in dir to dst dir
+     *
+     * ### Exclude files:
+     *
+     * ```php
+     *  $ftb->copyDir('path/to/template dir', './', [
+     *      'exclude'  => ['*.tpl'],
+     *  ])
+     * ```
+     *
+     * ### Adv Usage:
+     *
+     * ```php
+     *  $ftb->copyDir('path/to/template dir', './', [
+     *      'afterFn' => function (string $newFile) use ($ftb) {
+     *          // render vars in the match file
+     *          $ftb->renderOnMatch($newFile, ['*.java']);
+     *      },
+     *  ])
+     * ```
+     *
      * @param string $srcDir source dir path.
      * @param string $dstDir dst dir path, default relative the workDir.
      * @param array $options = [
-     *      'include'  => [], //
-     *      'exclude'  => [], //
+     *      'include'  => [], // limit copy files
+     *      'exclude'  => [], // can exclude files on copy
      *      'afterFn' => function(string $newFile) {},
      * ]
      *
@@ -123,7 +156,15 @@ class FileTreeBuilder extends AbstractObj
 
                 return !File::isExclude($oldFile, $options['exclude']);
             },
-            'afterFn'  => $options['afterFn'],
+            'afterFn'  => function (string $newFile) use ($options) {
+                if ($fn = $options['afterFn']) {
+                    $fn($newFile);
+                }
+
+                if ($fn = $this->afterCopy) {
+                    $fn($newFile);
+                }
+            },
         ]);
 
         return $this;
@@ -150,6 +191,8 @@ class FileTreeBuilder extends AbstractObj
     }
 
     /**
+     * Create multi files at once.
+     *
      * @param array $files file paths, default relative the workDir.
      * @param string $contents
      *
@@ -261,7 +304,7 @@ class FileTreeBuilder extends AbstractObj
      *
      * @return $this
      */
-    public function globRender(string $pattern, array $tplVars = []): self
+    public function renderByGlob(string $pattern, array $tplVars = []): self
     {
         foreach (glob($pattern) as $tplFile) {
             $this->tplFile($tplFile, '', $tplVars);
@@ -270,10 +313,40 @@ class FileTreeBuilder extends AbstractObj
     }
 
     /**
+     * Render give file on match patterns.
+     *
+     * @param string $tplFile
+     * @param array $patterns
+     * @param array $tplVars
+     *
+     * @return $this
+     */
+    public function renderOnMatch(string $tplFile, array $patterns, array $tplVars = []): self
+    {
+        if (File::isInclude($tplFile, $patterns)) {
+            $this->tplFile($tplFile, '', $tplVars);
+        }
+        return $this;
+    }
+
+    /**
+     * Render template vars in the give file, will update file contents to rendered.
+     *
+     * @param string $tplFile
+     * @param array $tplVars
+     *
+     * @return $this
+     */
+    public function renderFile(string $tplFile, array $tplVars = []): self
+    {
+        return $this->tplFile($tplFile, '', $tplVars);
+    }
+
+    /**
      * Create file from a template file
      *
      * @param string $tplFile tpl file path, relative the tplDir.
-     * @param string $dstFile Dst file path, relative the workdir. If empty, use $tplFile
+     * @param string $dstFile Dst file path, relative the workdir. If empty, use $tplFile for update.
      * @param array $tplVars
      *
      * @return $this
@@ -281,10 +354,10 @@ class FileTreeBuilder extends AbstractObj
     public function tplFile(string $tplFile, string $dstFile = '', array $tplVars = []): self
     {
         Assert::notBlank($tplFile);
-
         $dstFile = $this->getRealpath($dstFile ?: $tplFile);
+
         if (!File::isAbsPath($tplFile)) {
-            $tplFile = $this->tplDir  . '/' . $tplFile;
+            $tplFile = $this->tplDir . '/' . $tplFile;
         }
 
         $this->printMsgf('render file: %s', $tplFile);
@@ -292,8 +365,23 @@ class FileTreeBuilder extends AbstractObj
             $tplVars = array_merge($this->tplVars, $tplVars);
         }
 
-        $content = Str::renderTemplate(File::readAll($tplFile), $tplVars);
+        return $this->doRender($tplFile, $dstFile, $tplVars);
+    }
+
+    /**
+     * Do render template file
+     *
+     * @param string $tplFile
+     * @param string $dstFile
+     * @param array $tplVars
+     *
+     * @return $this
+     */
+    protected function doRender(string $tplFile, string $dstFile, array $tplVars = []): self
+    {
         if (!$this->dryRun) {
+            $content = Str::renderTemplate(File::readAll($tplFile), $tplVars);
+
             File::putContents($dstFile, $content);
         }
 
@@ -434,7 +522,7 @@ class FileTreeBuilder extends AbstractObj
                 $msg = '[DRY-RUN] ' . $msg;
             }
 
-            println($msg);
+            println(str_replace($this->baseDir, '{projectDir}', $msg));
         }
     }
 
@@ -451,7 +539,7 @@ class FileTreeBuilder extends AbstractObj
                 $tpl = '[DRY-RUN] ' . $tpl;
             }
 
-            printf($tpl . "\n", ...$vars);
+            println(str_replace($this->baseDir, '{projectDir}', sprintf($tpl, ...$vars)));
         }
     }
 
@@ -463,6 +551,17 @@ class FileTreeBuilder extends AbstractObj
     public function setTplVars(array $tplVars): self
     {
         $this->tplVars = $tplVars;
+        return $this;
+    }
+
+    /**
+     * @param callable(string $newFile): void $afterCopy
+     *
+     * @return FileTreeBuilder
+     */
+    public function setAfterCopy(callable $afterCopy): self
+    {
+        $this->afterCopy = $afterCopy;
         return $this;
     }
 

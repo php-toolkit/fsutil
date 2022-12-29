@@ -263,14 +263,14 @@ class Directory extends FileSystem
     }
 
     /**
-     * 复制目录内容
+     * Copy dir files, contains sub-dir.
      *
      * @param string $oldDir
      * @param string $newDir
      * @param array $options = [
      *     'skipExist' => true,
-     *     'beforeFn' => function (): bool { },
-     *     'afterFn' => function (): void { },
+     *     'beforeFn' => function (string $old, string $new): bool { },
+     *     'afterFn' => function (string $new): void { },
      * ]
      *
      * @return bool
@@ -317,7 +317,7 @@ class Directory extends FileSystem
             }
 
             // return false to skip copy
-            if ($beforeFn && !$beforeFn($old)) {
+            if ($beforeFn && !$beforeFn($old, $new)) {
                 continue;
             }
 

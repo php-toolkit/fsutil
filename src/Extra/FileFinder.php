@@ -131,7 +131,7 @@ class FileFinder implements IteratorAggregate, Countable
      */
     private array $filters = [];
 
-    /** @var Traversable[] */
+    /** @var Iterator[] */
     private array $iterators = [];
 
     /** @var bool */
@@ -675,11 +675,11 @@ class FileFinder implements IteratorAggregate, Countable
 
         $iterator = new class($dir, $flags, $this->recursive, $this->skipUnreadableDirs) extends RecursiveDirectoryIterator {
             private string $rootPath;
-            private string $subPath = '';
+            private ?string $subPath = null;
             private bool $recursive;
             private bool|null $rewindable = null;
 
-            private string $directorySep = '/';
+            private string $directorySep;
             private bool $skipUnreadableDirs;
 
             public function __construct(string $path, int $flags, bool $recursive = true, bool $skipUnreadableDirs = true)
@@ -701,24 +701,24 @@ class FileFinder implements IteratorAggregate, Countable
             public function current(): SplFileInfo
             {
                 // vdump($this->getPathname(), $this);
-                if (null === $subPathname = $this->subPath) {
-                    $subPathname = $this->subPath = $this->getSubPath();
+                if (null === $this->subPath) {
+                    $this->subPath = $this->getSubPath();
                 }
 
-                if ('' !== $subPathname) {
-                    $subPathname .= $this->directorySep;
-                }
+                // if ('' !== $subPathname) {
+                //     $subPathname .= $this->directorySep;
+                // }
 
-                $subPathname .= $this->getFilename();
+                // $subPathname .= $this->getFilename();
 
-                $fileInfo = new SplFileInfo($this->getPathname());
+                // $fileInfo = new SplFileInfo($this->getPathname());
                 // $fileInfo = new SplFileInfo($this->rootPath . $this->directorySep . $subPathname);
                 // vdump($this->rootPath, $subPathname, $fileInfo);
                 // add props
-                $fileInfo->relativePath     = $this->subPath;
-                $fileInfo->relativePathname = $subPathname;
+                // $fileInfo->relativePath     = $this->subPath;
+                // $fileInfo->relativePathname = $subPathname;
 
-                return $fileInfo;
+                return new SplFileInfo($this->getPathname());
             }
 
             public function hasChildren(bool $allowLinks = false): bool

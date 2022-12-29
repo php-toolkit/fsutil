@@ -55,7 +55,8 @@ $ftb = FileTreeBuilder::new()
     ->setWorkdir($workDir)
     ->setShowMsg(true);
 
-$ftb->copyDir('/path/to/dir', './') // copy dir to $workDir
+// copy dir to $workDir and with exclude match.
+$ftb->copyDir('/path/to/dir', './', ['exclude'  => ['*.tpl']])
     ->copy('/tplDir/some.file', 'new-file.txt') // copy file to $workDir/new-file.txt
     // make new dir $workDir/new-dir
     ->dir('new-dir', function (FileTreeBuilder $ftb) {
