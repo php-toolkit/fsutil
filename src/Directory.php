@@ -265,10 +265,18 @@ class Directory extends FileSystem
     /**
      * Copy dir files, contains sub-dir.
      *
-     * @param string $oldDir
-     * @param string $newDir
+     * ### $options
+     *
+     * - skipExist: bool, whether skip exist file.
+     * - filterFn: callback func on handle each file.
+     * - beforeFn: callback func on before copy file.
+     * - afterFn: callback func on after copy file.
+     *
+     * @param string $oldDir source directory path.
+     * @param string $newDir target directory path.
      * @param array $options = [
      *     'skipExist' => true,
+     *     'filterFn' => function (string $old): bool { },
      *     'beforeFn' => function (string $old, string $new): bool { },
      *     'afterFn' => function (string $new): void { },
      * ]
@@ -278,11 +286,12 @@ class Directory extends FileSystem
     public static function copy(string $oldDir, string $newDir, array $options = []): bool
     {
         if (!is_dir($oldDir)) {
-            throw new FileNotFoundException('copy failed：' . $oldDir . ' does not exist！');
+            throw new FileNotFoundException("copy error：source dir does not exist！path: $oldDir");
         }
 
         self::doCopy($oldDir, $newDir, array_merge([
             'skipExist' => true,
+            'filterFn'  => null,
             'beforeFn'  => null,
             'afterFn'   => null,
         ], $options));
@@ -301,6 +310,7 @@ class Directory extends FileSystem
     {
         self::create($newDir);
         $beforeFn = $options['beforeFn'];
+        $filterFn = $options['filterFn'];
 
         // use '{,.}*' match hidden files
         foreach (glob($oldDir . '/{,.}*', GLOB_BRACE) as $old) {
@@ -313,6 +323,11 @@ class Directory extends FileSystem
 
             if (is_dir($old)) {
                 self::doCopy($old, $new, $options);
+                continue;
+            }
+
+            // return false to skip copy
+            if ($filterFn && !$filterFn($old)) {
                 continue;
             }
 

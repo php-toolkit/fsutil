@@ -144,17 +144,16 @@ class FileTreeBuilder extends AbstractObj
         $this->printMsg("copy dir $srcDir to $dstDir");
 
         Dir::copy($srcDir, $dstDir, [
-            'beforeFn' => function (string $oldFile) use ($options): bool {
-                if ($this->dryRun) {
-                    $this->printMsgf('- copy file %s', $oldFile);
-                    return false;
-                }
-
+            'filterFn' => function (string $oldFile) use ($options): bool {
                 if ($options['include']) {
                     return File::isInclude($oldFile, $options['include']);
                 }
-
                 return !File::isExclude($oldFile, $options['exclude']);
+            },
+            'beforeFn' => function (string $oldFile, string $newFile): bool {
+                $this->printMsgf('- copy file %s to %s', $oldFile, $newFile);
+
+                return !$this->dryRun;
             },
             'afterFn'  => function (string $newFile) use ($options) {
                 if ($fn = $options['afterFn']) {
