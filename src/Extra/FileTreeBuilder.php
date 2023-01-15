@@ -296,6 +296,50 @@ class FileTreeBuilder extends AbstractObj
     }
 
     /**
+     * Simple render template by replace template vars.
+     *
+     * - not support expression on template.
+     *
+     * @param string $tplFile
+     * @param array $tplVars
+     *
+     * @return $this
+     */
+    public function replaceVars(string $tplFile, array $tplVars = []): static
+    {
+        Assert::notBlank($tplFile);
+
+        $dstFile = $this->getRealpath($tplFile);
+        if (!File::isAbsPath($tplFile)) {
+            $tplFile = $this->tplDir . '/' . $tplFile;
+        }
+
+        $this->printMsgf('replace vars: %s', $tplFile);
+        $this->doReplace($tplFile, $dstFile, $tplVars);
+
+        return $this;
+    }
+
+    /**
+     * @param string $tplFile
+     * @param string $dstFile
+     * @param array $tplVars
+     *
+     * @return void
+     */
+    protected function doReplace(string $tplFile, string $dstFile, array $tplVars = []): void
+    {
+        if (!$this->dryRun) {
+            if ($this->tplVars) {
+                $tplVars = array_merge($this->tplVars, $tplVars);
+            }
+
+            $content = Str::renderTemplate(File::readAll($tplFile), $tplVars);
+            File::putContents($dstFile, $content);
+        }
+    }
+
+    /**
      * Render template files by glob match.
      *
      * @param string $pattern
@@ -360,15 +404,15 @@ class FileTreeBuilder extends AbstractObj
         }
 
         $this->printMsgf('render file: %s', $tplFile);
-        if ($this->tplVars) {
-            $tplVars = array_merge($this->tplVars, $tplVars);
-        }
 
         return $this->doRender($tplFile, $dstFile, $tplVars);
     }
 
     /**
-     * Do render template file
+     * Do render template file with vars
+     *
+     * - should support expression on template.
+     * - TIP: recommended use package: phppkg/easytpl#EasyTemplate
      *
      * @param string $tplFile
      * @param string $dstFile
@@ -378,11 +422,7 @@ class FileTreeBuilder extends AbstractObj
      */
     protected function doRender(string $tplFile, string $dstFile, array $tplVars = []): self
     {
-        if (!$this->dryRun) {
-            $content = Str::renderTemplate(File::readAll($tplFile), $tplVars);
-
-            File::putContents($dstFile, $content);
-        }
+        $this->doReplace($tplFile, $dstFile, $tplVars);
 
         return $this;
     }
@@ -421,6 +461,8 @@ class FileTreeBuilder extends AbstractObj
     }
 
     /**
+     * get realpath relative the workdir
+     *
      * @param string $path
      *
      * @return string
