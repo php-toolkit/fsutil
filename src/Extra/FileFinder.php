@@ -726,6 +726,7 @@ class FileFinder implements IteratorAggregate, Countable
                 if (!$this->recursive) {
                     return false;
                 }
+
                 return parent::hasChildren($allowLinks);
             }
 
@@ -743,7 +744,8 @@ class FileFinder implements IteratorAggregate, Countable
                     return $children;
                 } catch (UnexpectedValueException $e) {
                     if ($this->skipUnreadableDirs) {
-                        return new RecursiveArrayIterator([]);
+                        return $this;
+                        // return null;
                         // return new RecursiveDirectoryIterator([]);
                     }
 

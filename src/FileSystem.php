@@ -201,6 +201,9 @@ abstract class FileSystem
         if (!$subPaths) {
             return $basePath;
         }
+        if (!$basePath) {
+            return implode(DIRECTORY_SEPARATOR, $subPaths);
+        }
 
         return $basePath . DIRECTORY_SEPARATOR . implode(DIRECTORY_SEPARATOR, $subPaths);
     }
@@ -254,14 +257,25 @@ abstract class FileSystem
     }
 
     /**
-     * 检查文件/夹/链接是否存在
-     *
-     * @param string $file 要检查的目标
+     * @param string $file
      * @param string $type
      *
      * @return bool
      */
     public static function exists(string $file, string $type = ''): bool
+    {
+        return self::isExists($file, $type);
+    }
+
+    /**
+     * 检查文件/夹/链接是否存在
+     *
+     * @param string $file 要检查的目标
+     * @param string $type file, dir, link
+     *
+     * @return bool
+     */
+    public static function isExists(string $file, string $type = ''): bool
     {
         if (!$type) {
             return file_exists($file);
