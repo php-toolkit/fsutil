@@ -4,6 +4,7 @@ namespace Toolkit\FsUtil\Extra;
 
 use Toolkit\FsUtil\Dir;
 use Toolkit\FsUtil\File;
+use Toolkit\FsUtil\FS;
 use Toolkit\Stdlib\Helper\Assert;
 use Toolkit\Stdlib\Obj\AbstractObj;
 use Toolkit\Stdlib\Str;
@@ -32,16 +33,6 @@ class FileTreeBuilder extends AbstractObj
     public bool $dryRun = false;
 
     /**
-     * @var string
-     */
-    private string $prevDir = '';
-
-    /**
-     * @var string
-     */
-    private string $workdir = '';
-
-    /**
      * base workdir, only init on first set workdir.
      *
      * @var string
@@ -49,14 +40,42 @@ class FileTreeBuilder extends AbstractObj
     private string $baseDir = '';
 
     /**
-     * @var array<string, mixed>
+     * @var string The previous dir path on change workdir.
+     */
+    private string $prevDir = '';
+
+    /**
+     * @var string The workdir path for build files/dirs.
+     */
+    private string $workdir = '';
+
+    /**
+     * @var array<string, mixed> The template vars for render file content.
      */
     public array $tplVars = [];
 
     /**
-     * @var string
+     * @var string The template dir path
      */
     public string $tplDir = '';
+
+    /**
+     * Custom render file function
+     *
+     * ## Usage
+     *
+     * ```php
+     * $ftb = FileTreeBuilder::new();
+     * $ftb->setRenderFn(function (string $tplFile, array $tplVars): string {
+     *     $content = $yourTplEng->renderFile($tplFile, $tplVars); // custom render content
+     *     return $content;
+     * });
+     * ```
+     *
+     * @var null|callable(string, array):string
+     * @see FileTreeBuilder::doReplace()
+     */
+    private $renderFn = null;
 
     /**
      * Callable on after file copied.
@@ -66,26 +85,34 @@ class FileTreeBuilder extends AbstractObj
     public $afterCopy;
 
     /**
+     * set workdir path
+     *
      * @param string $dir
      *
      * @return $this
      */
-    public function workdir(string $dir): self
+    public function workdir(string $dir): static
     {
         return $this->setWorkdir($dir);
     }
 
+    //
+    // ------------------------- copy file/dir -------------------------
+    //
+
     /**
-     * @param string $srcFile source file path.
-     * @param string $dstFile dst file path, default relative the workDir.
+     * @param string        $srcFile source file path.
+     * @param string        $dstFile dst file path, default relative the workDir.
      * @param callable|null $afterFn
      *
      * @return $this
      */
-    public function copy(string $srcFile, string $dstFile, ?callable $afterFn = null): self
+    public function copy(string $srcFile, string $dstFile, ?callable $afterFn = null): static
     {
+        $dstFile = $this->getRealpath($dstFile);
         $this->printMsg("copy file $srcFile to $dstFile");
         if (!$this->dryRun) {
+            $srcFile = $this->getRealpath($srcFile);
             File::copyFile($srcFile, $dstFile);
         }
 
@@ -96,7 +123,6 @@ class FileTreeBuilder extends AbstractObj
         if ($fn = $this->afterCopy) {
             $fn($dstFile);
         }
-
         return $this;
     }
 
@@ -122,26 +148,29 @@ class FileTreeBuilder extends AbstractObj
      *  ])
      * ```
      *
-     * @param string $srcDir source dir path.
+     * @param string $srcDir source dir path. default relative the workDir.
      * @param string $dstDir dst dir path, default relative the workDir.
-     * @param array $options = [
-     *      'include'  => [], // limit copy files
-     *      'exclude'  => [], // can exclude files on copy
+     * @param array  $options = [
+     *      'include'  => [], // limit copy files or dirs
+     *      'exclude'  => [], // exclude files or dirs
+     *      'renderOn' => ['*.java', ], // patterns to render
      *      'afterFn' => function(string $newFile) {},
      * ]
      *
      * @return $this
      */
-    public function copyDir(string $srcDir, string $dstDir, array $options = []): self
+    public function copyDir(string $srcDir, string $dstDir, array $options = []): static
     {
         $options = array_merge([
-            'include' => [],
-            'exclude' => [],
-            'afterFn' => null,
+            'include'  => [],
+            'exclude'  => [],
+            'renderOn' => [], // patterns to render
+            'afterFn'  => null,
         ], $options);
 
+        $srcDir = $this->getRealpath($srcDir);
         $dstDir = $this->getRealpath($dstDir);
-        $this->printMsg("copy dir $srcDir to $dstDir");
+        $this->printMsg("copy dir: $srcDir -> $dstDir");
 
         Dir::copy($srcDir, $dstDir, [
             'filterFn' => function (string $oldFile) use ($options): bool {
@@ -151,11 +180,13 @@ class FileTreeBuilder extends AbstractObj
                 return !File::isExclude($oldFile, $options['exclude']);
             },
             'beforeFn' => function (string $oldFile, string $newFile): bool {
-                $this->printMsgf('- copy file %s to %s', $oldFile, $newFile);
-
+                $this->printMsgf('- copy file %s -> %s', $oldFile, $newFile);
                 return !$this->dryRun;
             },
             'afterFn'  => function (string $newFile) use ($options) {
+                if ($patterns = $options['renderOn']) {
+                    $this->renderOnMatch($newFile, $patterns);
+                }
                 if ($fn = $options['afterFn']) {
                     $fn($newFile);
                 }
@@ -169,15 +200,19 @@ class FileTreeBuilder extends AbstractObj
         return $this;
     }
 
+    //
+    // ------------------------- create file/dir -------------------------
+    //
+
     /**
-     * create new file
+     * create new file with contents.
      *
      * @param string $name file path, default relative the workDir.
      * @param string $contents
      *
      * @return $this
      */
-    public function file(string $name, string $contents = ''): self
+    public function file(string $name, string $contents = ''): static
     {
         Assert::notBlank($name);
         $filePath = $this->getRealpath($name);
@@ -192,12 +227,12 @@ class FileTreeBuilder extends AbstractObj
     /**
      * Create multi files at once.
      *
-     * @param array $files file paths, default relative the workDir.
+     * @param array  $files file paths, default relative the workDir.
      * @param string $contents
      *
      * @return $this
      */
-    public function files(array $files, string $contents = ''): self
+    public function files(array $files, string $contents = ''): static
     {
         foreach ($files as $file) {
             $this->file($file, $contents);
@@ -207,6 +242,11 @@ class FileTreeBuilder extends AbstractObj
 
     /**
      * Quick make a dir
+     *
+     * ### $dir
+     *
+     * - can use absolute path or relative path{@link FileTreeBuilder::$workdir}
+     * - can use var from {@link FileTreeBuilder::$tplVars}
      *
      * ### Usage for $intoFn:
      *
@@ -218,64 +258,27 @@ class FileTreeBuilder extends AbstractObj
      *  })
      * ```
      *
-     * @param string $dir dir name or path.
-     * @param callable|null $intoFn
+     * @param string                   $dir dir name or path.
+     * @param callable(self):void|null $intoFn If not null, will change workdir and call it with self instance
      *
      * @return $this
      */
-    public function dir(string $dir, callable $intoFn = null): self
+    public function dir(string $dir, callable $intoFn = null): static
     {
         Assert::notBlank($dir);
         $dirPath = $this->getRealpath($dir);
-
         if (!$this->dryRun) {
             Dir::mkdir($dirPath);
         }
 
-        if ($intoFn !== null) {
-            $this->printMsgf("make dir: $dirPath, with into func");
+        if ($intoFn) {
+            $this->printMsgf("create dir: $dirPath, with into func");
             $ftb = clone $this;
             $ftb->changeWorkdir($dirPath);
             $intoFn($ftb);
         } else {
-            $this->printMsgf("make dir: $dirPath");
+            $this->printMsgf("create dir: $dirPath");
         }
-
-        return $this;
-    }
-
-    /**
-     * Quick make multi dir
-     *
-     * @param string ...$dirs
-     *
-     * @return $this
-     */
-    public function dirs(string ...$dirs): self
-    {
-        foreach ($dirs as $dir) {
-            $this->dir($dir);
-        }
-        return $this;
-    }
-
-    /**
-     * Into a dir and run $infoFn
-     *
-     * @param string $dir
-     * @param callable|null $intoFn
-     *
-     * @return $this
-     */
-    public function into(string $dir, callable $intoFn = null): self
-    {
-        Assert::notBlank($dir);
-        $dirPath = $this->getRealpath($dir);
-
-        $this->printMsgf("into dir $dirPath, with func");
-        $ftb = clone $this;
-        $ftb->changeWorkdir($dirPath);
-        $intoFn($ftb);
 
         return $this;
     }
@@ -288,7 +291,7 @@ class FileTreeBuilder extends AbstractObj
      *
      * @return $this
      */
-    public function dirFiles(string $name, string ...$files): self
+    public function dirFiles(string $name, string ...$files): static
     {
         return $this->dir($name, function (self $ftb) use ($files) {
             $ftb->files($files);
@@ -296,58 +299,100 @@ class FileTreeBuilder extends AbstractObj
     }
 
     /**
-     * Simple render template by replace template vars.
+     * Quick make multi dir
      *
-     * - not support expression on template.
-     *
-     * @param string $tplFile
-     * @param array $tplVars
+     * @param string ...$dirs
      *
      * @return $this
      */
-    public function replaceVars(string $tplFile, array $tplVars = []): static
+    public function dirs(string ...$dirs): static
+    {
+        foreach ($dirs as $dir) {
+            $this->dir($dir);
+        }
+        return $this;
+    }
+
+    /**
+     * Into a dir and run $infoFn
+     *
+     * @param string        $dir
+     * @param callable|null $intoFn
+     *
+     * @return $this
+     */
+    public function into(string $dir, callable $intoFn = null): static
+    {
+        Assert::notBlank($dir);
+        $dirPath = $this->getRealpath($dir);
+
+        $this->printMsgf("into dir $dirPath, with func");
+        $ftb = clone $this;
+        $ftb->changeWorkdir($dirPath);
+        $intoFn($ftb);
+
+        return $this;
+    }
+
+    //
+    // ------------------------- render vars -------------------------
+    //
+
+    /**
+     * Simple render template by replace template vars.
+     *
+     * - not support expression on template.
+     * - template var format: `{{var}}`
+     *
+     * @param string $tplFile
+     * @param array  $tplVars
+     *
+     * @return $this
+     */
+    public function fastRender(string $tplFile, array $tplVars = []): static
     {
         Assert::notBlank($tplFile);
-
-        $dstFile = $this->getRealpath($tplFile);
-        if (!File::isAbsPath($tplFile)) {
-            $tplFile = $this->tplDir . '/' . $tplFile;
-        }
+        $tplFile = $this->getRealpath($tplFile);
 
         $this->printMsgf('replace vars: %s', $tplFile);
-        $this->doReplace($tplFile, $dstFile, $tplVars);
+        $this->doFastRender($tplFile, $tplFile, $tplVars);
 
         return $this;
     }
 
     /**
+     * simple render template by replace template vars. format: `{{var}}`
+     *
      * @param string $tplFile
      * @param string $dstFile
-     * @param array $tplVars
+     * @param array  $tplVars
      *
      * @return void
      */
-    protected function doReplace(string $tplFile, string $dstFile, array $tplVars = []): void
+    protected function doFastRender(string $tplFile, string $dstFile, array $tplVars = []): void
     {
-        if (!$this->dryRun) {
-            if ($this->tplVars) {
-                $tplVars = array_merge($this->tplVars, $tplVars);
-            }
-
-            $content = Str::renderTemplate(File::readAll($tplFile), $tplVars);
-            File::putContents($dstFile, $content);
+        if ($this->dryRun) {
+            $this->printMsgf('skip render: %s', $tplFile);
+            return;
         }
+
+        if ($this->tplVars) {
+            $tplVars = array_merge($this->tplVars, $tplVars);
+        }
+
+        $content = Str::renderTemplate(File::readAll($tplFile), $tplVars);
+        File::putContents($dstFile, $content);
     }
 
     /**
      * Render template files by glob match.
      *
      * @param string $pattern
-     * @param array $tplVars
+     * @param array  $tplVars
      *
      * @return $this
      */
-    public function renderByGlob(string $pattern, array $tplVars = []): self
+    public function renderByGlob(string $pattern, array $tplVars = []): static
     {
         foreach (glob($pattern) as $tplFile) {
             $this->tplFile($tplFile, '', $tplVars);
@@ -359,12 +404,12 @@ class FileTreeBuilder extends AbstractObj
      * Render give file on match patterns.
      *
      * @param string $tplFile
-     * @param array $patterns
-     * @param array $tplVars
+     * @param array  $patterns
+     * @param array  $tplVars
      *
      * @return $this
      */
-    public function renderOnMatch(string $tplFile, array $patterns, array $tplVars = []): self
+    public function renderOnMatch(string $tplFile, array $patterns, array $tplVars = []): static
     {
         if (File::isInclude($tplFile, $patterns)) {
             $this->tplFile($tplFile, '', $tplVars);
@@ -373,58 +418,36 @@ class FileTreeBuilder extends AbstractObj
     }
 
     /**
+     * @param string|array $tplFiles
+     * @param array        $tplVars
+     *
+     * @return $this
+     */
+    public function renderExists(string|array $tplFiles, array $tplVars = []): static
+    {
+        foreach ((array)$tplFiles as $key => $tplFile) {
+            $dstFile = '';
+            if ($key && is_string($key)) {
+                $dstFile = $tplFile;
+                $tplFile = $key;
+            }
+            $this->tplExists($tplFile, $dstFile, $tplVars);
+        }
+
+        return $this;
+    }
+
+    /**
      * Render template vars in the give file, will update file contents to rendered.
      *
      * @param string $tplFile
-     * @param array $tplVars
+     * @param array  $tplVars
      *
      * @return $this
      */
-    public function renderFile(string $tplFile, array $tplVars = []): self
+    public function renderFile(string $tplFile, array $tplVars = []): static
     {
         return $this->tplFile($tplFile, '', $tplVars);
-    }
-
-    /**
-     * Create file from a template file
-     *
-     * @param string $tplFile tpl file path, relative the tplDir.
-     * @param string $dstFile Dst file path, relative the workdir. If empty, use $tplFile for update.
-     * @param array $tplVars
-     *
-     * @return $this
-     */
-    public function tplFile(string $tplFile, string $dstFile = '', array $tplVars = []): self
-    {
-        Assert::notBlank($tplFile);
-        $dstFile = $this->getRealpath($dstFile ?: $tplFile);
-
-        if (!File::isAbsPath($tplFile)) {
-            $tplFile = $this->tplDir . '/' . $tplFile;
-        }
-
-        $this->printMsgf('render file: %s', $tplFile);
-
-        return $this->doRender($tplFile, $dstFile, $tplVars);
-    }
-
-    /**
-     * Do render template file with vars
-     *
-     * - should support expression on template.
-     * - TIP: recommended use package: phppkg/easytpl#EasyTemplate
-     *
-     * @param string $tplFile
-     * @param string $dstFile
-     * @param array $tplVars
-     *
-     * @return $this
-     */
-    protected function doRender(string $tplFile, string $dstFile, array $tplVars = []): self
-    {
-        $this->doReplace($tplFile, $dstFile, $tplVars);
-
-        return $this;
     }
 
     /**
@@ -435,7 +458,7 @@ class FileTreeBuilder extends AbstractObj
      *
      * @return $this
      */
-    public function tplFiles(array $tpl2dstMap, array $tplVars = []): self
+    public function tplFiles(array $tpl2dstMap, array $tplVars = []): static
     {
         foreach ($tpl2dstMap as $tplFile => $dstFile) {
             if (!$tplFile || is_int($tplFile)) {
@@ -447,6 +470,132 @@ class FileTreeBuilder extends AbstractObj
 
         return $this;
     }
+
+    /**
+     * Alias of {@see tplFile()} method.
+     *
+     * @param string $tplFile
+     * @param string $dstFile
+     * @param array  $tplVars
+     *
+     * @return $this
+     */
+    public function tpl(string $tplFile, string $dstFile = '', array $tplVars = []): static
+    {
+        return $this->tplFile($tplFile, $dstFile, $tplVars);
+    }
+
+    /**
+     * Create file from a template file.
+     *
+     * - TIP: can use {pathVar} in the path, see {@see getRealpath()}
+     *
+     * @param string $tplFile tpl file path, relative the tplDir.
+     * @param string $dstFile Dst file path, relative the workdir. If empty, use $tplFile for update.
+     * @param array  $tplVars
+     *
+     * @return $this
+     */
+    public function tplFile(string $tplFile, string $dstFile = '', array $tplVars = []): static
+    {
+        Assert::notBlank($tplFile);
+        $tplFile = $this->getRealpath($tplFile);
+
+        if ($dstFile) {
+            $dstFile = $this->getRealpath($dstFile);
+            $this->printMsgf('render file: %s -> %s', $tplFile, $dstFile);
+        } else {
+            $dstFile = $tplFile;
+            $this->printMsgf('render file: %s', $tplFile);
+        }
+
+        return $this->doRender($tplFile, $dstFile, $tplVars);
+    }
+
+    /**
+     * Create file on the template file exists.
+     *
+     * @param string $tplFile
+     * @param string $dstFile
+     * @param array  $tplVars
+     *
+     * @return $this
+     */
+    public function tplExists(string $tplFile, string $dstFile = '', array $tplVars = []): self
+    {
+        $tplFile = $this->getRealpath($tplFile);
+        if (!File::exists($tplFile)) {
+            return $this;
+        }
+
+        return $this->tplFile($tplFile, $dstFile, $tplVars);
+    }
+
+    /**
+     * Render tplFile file to dstFile, then remove source file.
+     *
+     * @return $this
+     */
+    public function replace(string $tplFile, string $dstFile, array $tplVars = []): static
+    {
+        $tplFile = $this->getRealpath($tplFile);
+        $this->tplFile($tplFile, $dstFile, $tplVars);
+
+        $this->printMsgf('remove file: %s', $tplFile);
+        return $this->remove($tplFile);
+    }
+
+    /**
+     * Do render template file with vars
+     *
+     * - should support expression on template.
+     * - TIP: recommended use package: phppkg/easytpl#EasyTemplate
+     *
+     * @param string $tplFile
+     * @param string $dstFile
+     * @param array  $tplVars
+     *
+     * @return $this
+     */
+    protected function doRender(string $tplFile, string $dstFile, array $tplVars = []): self
+    {
+        if ($this->dryRun) {
+            $this->printMsgf('skip render: %s', $tplFile);
+            return $this;
+        }
+
+        // custom render function.
+        if ($renderFn = $this->renderFn) {
+            if ($this->tplVars) {
+                $tplVars = array_merge($this->tplVars, $tplVars);
+            }
+
+            $content = $renderFn($tplFile, $tplVars);
+            File::putContents($dstFile, $content);
+            return $this;
+        }
+
+        // fallback use var replacer
+        $this->doFastRender($tplFile, $dstFile, $tplVars);
+        return $this;
+    }
+
+    /**
+     * @param string ...$paths
+     *
+     * @return $this
+     */
+    public function remove(string ...$paths): static
+    {
+        foreach ($paths as $path) {
+            FS::removePath($this->getRealpath($path));
+        }
+        return $this;
+    }
+
+    //
+    // ------------------------- helper methods -------------------------
+    //
 
     /**
      * @return $this
@@ -463,18 +612,35 @@ class FileTreeBuilder extends AbstractObj
     /**
      * get realpath relative the workdir
      *
-     * @param string $path
+     * @param string $path path, will apply {@see renderPathVars()}
      *
      * @return string
      */
-    public function getRealpath(string $path): string
+    public function getRealpath(string $path, string $baseDir = ''): string
     {
-        $realPath = $path;
-        if ($path && Dir::isRelative($path)) {
-            $realPath = Dir::join($this->workdir, $path);
+        $realPath = $this->renderPathVars($path);
+        if ($path && Dir::isRelative($realPath)) {
+            $realPath = Dir::join($baseDir ?: $this->workdir, $realPath);
         }
-
         return $realPath;
+    }
+
+    /**
+     * @param string $path eg: {workdir}/ab/c
+     *
+     * @return string
+     */
+    protected function renderPathVars(string $path): string
+    {
+        $vars = array_merge($this->tplVars, [
+            'baseDir' => $this->baseDir,
+            'tplDir'  => $this->tplDir,
+            'prevDir' => $this->prevDir,
+            'current' => $this->workdir,
+            'workdir' => $this->workdir,
+        ]);
+
+        return Str::renderVars($path, $vars, '{%s}', true);
     }
 
     /**
@@ -487,7 +653,7 @@ class FileTreeBuilder extends AbstractObj
         if ($name) {
             $this->prevDir = $this->workdir;
             // is relative path
-            if ($name[0] === '.' || Str::isAlphaNum($name[0])) {
+            if ($name[0] === '.' || Dir::isRelative($name)) {
                 $this->workdir .= '/' . trim($name, './');
             } else {
                 $this->workdir = $name;
@@ -563,25 +729,20 @@ class FileTreeBuilder extends AbstractObj
                 $msg = '[DRY-RUN] ' . $msg;
             }
 
-            println(str_replace($this->baseDir, '{projectDir}', $msg));
+            $pTplDir = dirname($this->tplDir);
+            println(str_replace([ $pTplDir, $this->baseDir], ['TPL_DIR/..', 'PROJECT_DIR'], $msg));
         }
     }
 
     /**
      * @param string $tpl
-     * @param ...$vars
+     * @param mixed  ...$vars
      *
      * @return void
      */
     protected function printMsgf(string $tpl, ...$vars): void
     {
-        if ($this->showMsg) {
-            if ($this->dryRun) {
-                $tpl = '[DRY-RUN] ' . $tpl;
-            }
-
-            println(str_replace($this->baseDir, '{projectDir}', sprintf($tpl, ...$vars)));
-        }
+        $this->printMsg(sprintf($tpl, ...$vars));
     }
 
     /**
@@ -603,6 +764,25 @@ class FileTreeBuilder extends AbstractObj
     public function setAfterCopy(callable $afterCopy): self
     {
         $this->afterCopy = $afterCopy;
+        return $this;
+    }
+
+    /**
+     * @return callable|null
+     */
+    public function getRenderFn(): ?callable
+    {
+        return $this->renderFn;
+    }
+
+    /**
+     * @param callable(string, array):string $renderFn
+     *
+     * @return $this
+     */
+    public function setRenderFn(callable $renderFn): self
+    {
+        $this->renderFn = $renderFn;
         return $this;
     }
 

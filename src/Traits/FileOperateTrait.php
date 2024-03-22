@@ -167,13 +167,13 @@ trait FileOperateTrait
     }
 
     /**
-     * @param $filename
+     * @param string $filename
      *
      * @return bool
      * @throws InvalidArgumentException
      * @throws FileNotFoundException
      */
-    public static function delete($filename): bool
+    public static function delete(string $filename): bool
     {
         return self::check($filename) && unlink($filename);
     }

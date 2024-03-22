@@ -281,13 +281,11 @@ trait FileSystemFuncTrait
         }
 
         $fullPath = implode(DIRECTORY_SEPARATOR, $absolutes);
-
-        // is unix like OS
-        if (DIRECTORY_SEPARATOR === '/' && $fullPath[0] !== '/') {
-            return '/' . $fullPath;
+        if (self::isAbsPath($fullPath)) {
+            return $fullPath;
         }
 
-        return $fullPath;
+        return getcwd() . DIRECTORY_SEPARATOR . $fullPath;
     }
 
     /**********************************************************************************
@@ -308,7 +306,14 @@ trait FileSystemFuncTrait
             return;
         }
 
-        if (!@mkdir($dirPath, $mode, $recursive, $context) && !is_dir($dirPath)) {
+        try {
+            $ok = mkdir($dirPath, $mode, $recursive, $context);
+        } catch (\Throwable $e) {
+            throw new IOException(sprintf('Failed to create "%s": %s.', $dirPath, $e->getMessage()), 500, $e);
+        }
+
+        // re-check if the directory was created
+        if (!$ok && !is_dir($dirPath)) {
             $error = error_get_last();
 
             if (!is_dir($dirPath)) {

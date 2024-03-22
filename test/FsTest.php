@@ -20,6 +20,7 @@ class FsTest extends TestCase
             'C:\\tmp',
             'C:\tmp',
             "C:\\tmp",
+            "C:\Users\inhere\workspace",
         ];
 
         foreach ($tests as $case) {

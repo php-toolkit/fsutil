@@ -286,11 +286,11 @@ class Directory extends FileSystem
     public static function copy(string $oldDir, string $newDir, array $options = []): bool
     {
         if (!is_dir($oldDir)) {
-            throw new FileNotFoundException("copy error：source dir does not exist！path: $oldDir");
+            throw new FileNotFoundException("Copy error: source dir does not exist！path: $oldDir");
         }
 
         self::doCopy($oldDir, $newDir, array_merge([
-            'skipExist' => true,
+            'skipExist' => true, // skip exist file
             'filterFn'  => null,
             'beforeFn'  => null,
             'afterFn'   => null,
@@ -310,7 +310,7 @@ class Directory extends FileSystem
     {
         self::create($newDir);
         $beforeFn = $options['beforeFn'];
-        $filterFn = $options['filterFn'];
+        $filterFn = $options['filterFn']; // filter file or dir.
 
         // use '{,.}*' match hidden files
         foreach (glob($oldDir . '/{,.}*', GLOB_BRACE) as $old) {
@@ -319,15 +319,14 @@ class Directory extends FileSystem
                 continue;
             }
 
-            $new = self::joinPath($newDir, $name);
-
-            if (is_dir($old)) {
-                self::doCopy($old, $new, $options);
+            // return false to skip copy
+            if ($filterFn && !$filterFn($old)) {
                 continue;
             }
 
-            // return false to skip copy
-            if ($filterFn && !$filterFn($old)) {
+            $new = self::joinPath($newDir, $name);
+            if (is_dir($old)) {
+                self::doCopy($old, $new, $options);
                 continue;
             }
 
@@ -361,7 +360,6 @@ class Directory extends FileSystem
     public static function delete(string $path, bool $delSelf = true): bool
     {
         $dirPath = self::pathFormat($path);
-
         if (is_file($dirPath)) {
             return unlink($dirPath);
         }

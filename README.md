@@ -22,9 +22,7 @@ Some useful file system util for php
 composer require toolkit/fsutil
 ```
 
-## Usage
-
-### File Finder
+## File Finder
 
 ```php
 use Toolkit\FsUtil\Extra\FileFinder;
@@ -44,9 +42,13 @@ foreach ($finder as $file) {
 }
 ```
 
-### File Tree Builder
+## File Tree Builder
 
 `FileTreeBuilder` - can be quickly create dirs and files, copy dir and files.
+
+- can use path var in `dir()`, `copy()` ... methods. eg: `copy('{baseDir}/to/file', '{workdir}/dst/file')`
+
+Quick start:
 
 ```php
 use Toolkit\FsUtil\Extra\FileTreeBuilder;
@@ -78,7 +80,16 @@ Will create file tree like:
  |-- new-file1.md
 ```
 
-### Modify Watcher
+### path vars
+
+- `tplDir` The template dir path
+- `baseDir` base workdir path, only init on first set workdir.
+- `current,workdir` current workdir path.
+- And all simple type var in `tplVars`.
+
+Usage in path string: `{baseDir}/file`
+
+## Modify Watcher
 
 ```php
 use Toolkit\FsUtil\Extra\ModifyWatcher;

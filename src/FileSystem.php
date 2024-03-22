@@ -46,6 +46,11 @@ abstract class FileSystem
     use FileSystemFuncTrait;
 
     /**
+     * @var string
+     */
+    public const DS = DIRECTORY_SEPARATOR;
+
+    /**
      * @param string $path
      *
      * @return bool
@@ -57,11 +62,10 @@ abstract class FileSystem
         }
 
         if (str_starts_with($path, '/') ||  // linux/mac
-            1 === preg_match('#^[a-z]:[/|\\\].+#i', $path) // windows
+            1 === preg_match('#^[a-zA-Z]:[/|\\\].+#i', $path) // windows
         ) {
             return true;
         }
-
         return false;
     }
 
@@ -150,7 +154,7 @@ abstract class FileSystem
     }
 
     /**
-     * path format. always end /
+     * Path format. will replace \ to /, and always end /
      *
      * @param string $dirName
      *
@@ -241,7 +245,7 @@ abstract class FileSystem
      */
     public static function assertIsFile(string $filepath): void
     {
-        if (is_file($filepath)) {
+        if (!is_file($filepath)) {
             throw new InvalidArgumentException("No such file: $filepath");
         }
     }
@@ -251,14 +255,14 @@ abstract class FileSystem
      */
     public static function assertIsDir(string $dirPath): void
     {
-        if (is_dir($dirPath)) {
+        if (!is_dir($dirPath)) {
             throw new InvalidArgumentException("No such directory: $dirPath");
         }
     }
 
     /**
-     * @param string $file
-     * @param string $type
+     * @param string $file file or dir path
+     * @param string $type allow: file, dir, link
      *
      * @return bool
      */
@@ -271,7 +275,7 @@ abstract class FileSystem
      * 检查文件/夹/链接是否存在
      *
      * @param string $file 要检查的目标
-     * @param string $type file, dir, link
+     * @param string $type allow: file, dir, link
      *
      * @return bool
      */
@@ -382,6 +386,30 @@ abstract class FileSystem
 
         closedir($dh);
         return @chmod($path, $mode);
+    }
+
+    /**
+     * @param string ...$paths directory or file path list
+     */
+    public static function removePaths(string ...$paths): void
+    {
+        foreach ($paths as $path) {
+            self::removePath($path);
+        }
+    }
+
+    /**
+     * @param string $path directory or file path
+     *
+     * @return void
+     */
+    public static function removePath(string $path): void
+    {
+        if (is_dir($path)) {
+            Dir::delete($path);
+        } else {
+            File::delete($path);
+        }
     }
 
     /**
