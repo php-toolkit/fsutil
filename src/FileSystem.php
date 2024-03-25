@@ -261,6 +261,16 @@ abstract class FileSystem
     }
 
     /**
+     * @param string $path
+     */
+    public static function assertIsExists(string $path): void
+    {
+        if (!file_exists($path)) {
+            throw new InvalidArgumentException("No such file or directory: $path");
+        }
+    }
+
+    /**
      * @param string $file file or dir path
      * @param string $type allow: file, dir, link
      *
