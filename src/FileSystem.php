@@ -106,17 +106,7 @@ abstract class FileSystem
         if (!$patterns) {
             return false;
         }
-
-        foreach ($patterns as $pattern) {
-            if ($pattern === '*' || $pattern === '**/*') {
-                return true;
-            }
-
-            if (fnmatch($pattern, $path)) {
-                return true;
-            }
-        }
-        return false;
+        return self::isMatch($path, $patterns);
     }
 
     /**
@@ -130,13 +120,23 @@ abstract class FileSystem
         if (!$patterns) {
             return true;
         }
+        return self::isMatch($path, $patterns);
+    }
 
+    /**
+     * @param string $path
+     * @param array $patterns
+     *
+     * @return bool
+     */
+    public static function isMatch(string $path, array $patterns): bool
+    {
         foreach ($patterns as $pattern) {
             if ($pattern === '*' || $pattern === '**/*') {
                 return true;
             }
 
-            if (fnmatch($pattern, $path)) {
+            if ($pattern === $path || fnmatch($pattern, $path)) {
                 return true;
             }
         }

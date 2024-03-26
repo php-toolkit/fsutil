@@ -4,6 +4,7 @@ namespace Toolkit\FsUtilTest;
 
 use PHPUnit\Framework\TestCase;
 use Toolkit\FsUtil\FS;
+use Toolkit\Stdlib\OS;
 use function strlen;
 use function vdump;
 
@@ -37,32 +38,42 @@ class FsTest extends TestCase
     {
         // join
         $this->assertEquals('/ab', FS::join('/ab'));
-        $this->assertEquals('/ab/d', FS::join('/ab', '', 'd'));
-        $this->assertEquals('/ab/d/e', FS::join('/ab', 'd', 'e'));
         $this->assertEquals('/ab', FS::join('/ab', '.'));
         $this->assertEquals('/ab', FS::join('/ab', './'));
-        $this->assertEquals('/ab/cd', FS::join('/ab', './cd'));
+        if (OS::isWindows()) {
+            $this->assertEquals('/ab\\d', FS::join('/ab', '', 'd'));
+            $this->assertEquals('/ab\\d\\e', FS::join('/ab', 'd', 'e'));
+            $this->assertEquals('/ab\\cd', FS::join('/ab', './cd'));
+        } else {
+            $this->assertEquals('/ab/d', FS::join('/ab', 'd'));
+            $this->assertEquals('/ab/d/e', FS::join('/ab', 'd', 'e'));
+            $this->assertEquals('/ab/cd', FS::join('/ab', './cd'));
+        }
+
     }
 
     public function testIsExclude_isInclude(): void
     {
-        $this->assertTrue(FS::isInclude('./abc.php', []));
-        $this->assertTrue(FS::isInclude('./abc.php', ['*']));
-        $this->assertTrue(FS::isInclude('./abc.php', ['*.php']));
-        $this->assertTrue(FS::isInclude('path/to/abc.php', ['*.php']));
-        $this->assertFalse(FS::isInclude('./abc.php', ['*.xml']));
+        $tests = [
+            ['./abc.php', '*', true],
+            ['./abc.php', '*.php', true],
+            ['./abc.php', '*.yml', false],
+            ['path/to/abc.php', '*.php', true],
+        ];
+        foreach ($tests as $item) {
+            $this->assertEquals($item[2], FS::isInclude($item[0], [$item[1]]));
+            $this->assertEquals($item[2], FS::isExclude($item[0], [$item[1]]));
+            $this->assertEquals($item[2], FS::isMatch($item[0], [$item[1]]));
+        }
 
+        $this->assertTrue(FS::isInclude('./abc.php', []));
         $this->assertFalse(FS::isExclude('./abc.php', []));
-        $this->assertTrue(FS::isExclude('./abc.php', ['*']));
-        $this->assertTrue(FS::isExclude('./abc.php', ['*.php']));
-        $this->assertTrue(FS::isExclude('path/to/abc.php', ['*.php']));
-        $this->assertFalse(FS::isExclude('./abc.php', ['*.yml']));
     }
 
     public function testRealpath(): void
     {
         $rPaths = [];
-        $tests = [
+        $tests  = [
             '~',
             '~/.kite',
         ];

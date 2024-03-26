@@ -153,7 +153,7 @@ class FileTreeBuilder extends AbstractObj
      * @param array  $options = [
      *      'include'  => [], // limit copy files or dirs
      *      'exclude'  => [], // exclude files or dirs
-     *      'renderOn' => ['*.java', ], // patterns to render
+     *      'renderOn' => ['*.java', ], // patterns to render file
      *      'afterFn' => function(string $newFile) {},
      * ]
      *
@@ -451,6 +451,18 @@ class FileTreeBuilder extends AbstractObj
     }
 
     /**
+     * Render template vars in the give files, will update file contents to rendered.
+     *
+     * @param string ...$tplFiles
+     *
+     * @return $this
+     */
+    public function renderFiles(string ...$tplFiles): static
+    {
+        return $this->tplFiles($tplFiles);
+    }
+
+    /**
      * Create files from template files
      *
      * @param array $tpl2dstMap
@@ -640,6 +652,7 @@ class FileTreeBuilder extends AbstractObj
             'workdir' => $this->workdir,
         ]);
 
+        $vars['projectDir'] = $this->baseDir;
         return Str::renderVars($path, $vars, '{%s}', true);
     }
 
@@ -754,6 +767,40 @@ class FileTreeBuilder extends AbstractObj
     {
         $this->tplVars = $tplVars;
         return $this;
+    }
+
+    /**
+     * @param array $tplVars
+     *
+     * @return $this
+     */
+    public function addTplVars(array $tplVars): self
+    {
+        $this->tplVars = array_merge($this->tplVars, $tplVars);
+        return $this;
+    }
+
+    /**
+     * @param string $key
+     * @param mixed  $value
+     *
+     * @return $this
+     */
+    public function setTplVar(string $key, mixed $value): self
+    {
+        $this->tplVars[$key] = $value;
+        return $this;
+    }
+
+    /**
+     * @param string     $key
+     * @param mixed|null $default
+     *
+     * @return mixed
+     */
+    public function getTplVar(string $key, mixed $default = null): mixed
+    {
+        return $this->tplVars[$key] ?? $default;
     }
 
     /**
