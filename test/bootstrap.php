@@ -3,7 +3,7 @@
  * phpunit --bootstrap tests/boot.php tests
  */
 
-error_reporting(E_ALL | E_STRICT);
+// error_reporting(E_ALL | E_STRICT);
 date_default_timezone_set('Asia/Shanghai');
 
 $libDir = dirname(__DIR__);
