@@ -268,6 +268,10 @@ trait FileSystemFuncTrait
         }
 
         $absolutes = [];
+        if ($path[0] === '/') {
+            $absolutes[] = '/';
+        }
+
         foreach ($parts as $part) {
             if ('.' === $part) {
                 continue;

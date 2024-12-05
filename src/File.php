@@ -191,7 +191,7 @@ class File extends FileSystem
         bool $useIncludePath = false,
         $context = null,
         int $offset = 0,
-        int $maxlen = null
+        ?int $maxlen = null
     ): string {
         if (!is_file($filename)) {
             throw new InvalidArgumentException("No such file: $filename");
