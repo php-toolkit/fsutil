@@ -55,15 +55,15 @@ class FsTest extends TestCase
     public function testIsExclude_isInclude(): void
     {
         $tests = [
-            ['./abc.php', '*', true],
-            ['./abc.php', '*.php', true],
-            ['./abc.php', '*.yml', false],
-            ['path/to/abc.php', '*.php', true],
+            ['./abc.php', ['*'], true],
+            ['./abc.php', ['*.php'], true],
+            ['./abc.php', ['*.yml'], false],
+            ['path/to/abc.php', ['*.php'], true],
         ];
         foreach ($tests as $item) {
-            $this->assertEquals($item[2], FS::isInclude($item[0], [$item[1]]));
-            $this->assertEquals($item[2], FS::isExclude($item[0], [$item[1]]));
-            $this->assertEquals($item[2], FS::isMatch($item[0], [$item[1]]));
+            $this->assertEquals($item[2], FS::isInclude($item[0], $item[1]));
+            $this->assertEquals($item[2], FS::isExclude($item[0], $item[1]));
+            $this->assertEquals($item[2], FS::isMatch($item[0], $item[1]));
         }
 
         $this->assertTrue(FS::isInclude('./abc.php', []));

@@ -265,11 +265,11 @@ class Directory extends FileSystem
     /**
      * Copy dir files, contains sub-dir.
      *
-     * ### $options
+     * ### `$options`
      *
      * - skipExist: bool, whether skip exist file.
-     * - filterFn: callback func on handle each file.
-     * - beforeFn: callback func on before copy file.
+     * - filterFn: callback func on handle each file. return false to skip copy
+     * - beforeFn: callback func on before copy file. return false to skip copy
      * - afterFn: callback func on after copy file.
      *
      * @param string $oldDir source directory path.
@@ -286,7 +286,7 @@ class Directory extends FileSystem
     public static function copy(string $oldDir, string $newDir, array $options = []): bool
     {
         if (!is_dir($oldDir)) {
-            throw new FileNotFoundException("Copy error: source dir does not exist！path: $oldDir");
+            throw new FileNotFoundException("Copy error: source dir does not exist! path: $oldDir");
         }
 
         self::doCopy($oldDir, $newDir, array_merge([

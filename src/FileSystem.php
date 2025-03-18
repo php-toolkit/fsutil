@@ -97,35 +97,29 @@ abstract class FileSystem
 
     /**
      * @param string $path
-     * @param array $patterns
+     * @param array $patterns eg: ['*.php', '*.html']
      *
      * @return bool
      */
     public static function isExclude(string $path, array $patterns): bool
     {
-        if (!$patterns) {
-            return false;
-        }
-        return self::isMatch($path, $patterns);
+        return $patterns && self::isMatch($path, $patterns);
     }
 
     /**
      * @param string $path
-     * @param array $patterns
+     * @param array $patterns eg: ['*.php', '*.html']
      *
      * @return bool
      */
     public static function isInclude(string $path, array $patterns): bool
     {
-        if (!$patterns) {
-            return true;
-        }
-        return self::isMatch($path, $patterns);
+        return !$patterns || self::isMatch($path, $patterns);
     }
 
     /**
      * @param string $path
-     * @param array $patterns
+     * @param array $patterns eg: ['*.php', '*.html']
      *
      * @return bool
      */
@@ -154,17 +148,21 @@ abstract class FileSystem
     }
 
     /**
-     * Path format. will replace \ to /, and always end /
+     * Path format. will replace \ to /
      *
      * @param string $dirName
+     * @param bool $endWithSlash set end with slash '/'. default true
      *
      * @return string
      */
-    public static function pathFormat(string $dirName): string
+    public static function pathFormat(string $dirName, bool $endWithSlash = true): string
     {
         $dirName = (string)str_ireplace('\\', '/', trim($dirName));
 
-        return str_ends_with($dirName, '/') ? $dirName : $dirName . '/';
+        if (str_ends_with($dirName, '/')) {
+            return $endWithSlash ? $dirName : substr($dirName, 0, -1);
+        }
+        return $endWithSlash ?  $dirName . '/' : $dirName;
     }
 
     /**

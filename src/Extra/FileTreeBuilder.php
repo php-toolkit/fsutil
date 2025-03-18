@@ -5,6 +5,7 @@ namespace Toolkit\FsUtil\Extra;
 use Toolkit\FsUtil\Dir;
 use Toolkit\FsUtil\File;
 use Toolkit\FsUtil\FS;
+use Toolkit\FsUtil\Path;
 use Toolkit\Stdlib\Helper\Assert;
 use Toolkit\Stdlib\Obj\AbstractObj;
 use Toolkit\Stdlib\Str;
@@ -715,7 +716,7 @@ class FileTreeBuilder extends AbstractObj
      */
     public function setTplDir(string $tplDir): self
     {
-        $this->tplDir = $tplDir;
+        $this->tplDir = Path::format($tplDir, false);
         return $this;
     }
 

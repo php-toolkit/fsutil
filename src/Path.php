@@ -31,11 +31,12 @@ class Path extends FileSystem
 
     /**
      * @param string $path
+     * @param bool   $endWithSlash
      *
      * @return string
      */
-    public static function format(string $path): string
+    public static function format(string $path, bool $endWithSlash = true): string
     {
-        return self::pathFormat($path);
+        return self::pathFormat($path, $endWithSlash);
     }
 }

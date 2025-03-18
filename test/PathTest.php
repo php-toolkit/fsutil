@@ -27,4 +27,20 @@ class PathTest extends TestCase
             $this->assertTrue(Path::isAbsolute($case));
         }
     }
+
+    public function testFormat(): void
+    {
+        $tests = [
+            '/path/to/tmp' => '/path/to/tmp',
+            'C:\tmp' => 'C:/tmp',
+            'C:/path/to/dir' => 'C:/path/to/dir',
+            'C:\\path\\to\\dir' => 'C:/path/to/dir',
+            "path\\to\\dir" => 'path/to/dir',
+        ];
+
+        foreach ($tests as $case => $expect) {
+            $this->assertSame($expect, Path::format($case, false));
+            $this->assertSame($expect . '/', Path::format($case));
+        }
+    }
 }
