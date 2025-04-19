@@ -44,7 +44,7 @@ class IniParser extends AbstractParser
     protected static function doParse(
         string $string,
         bool $enhancement = false,
-        callable $pathHandler = null,
+        ?callable $pathHandler = null,
         string $fileDir = ''
     ): array {
         if (!$string) {

@@ -41,7 +41,7 @@ abstract class AbstractParser
     abstract protected static function doParse(
         string $string,
         bool $enhancement = false,
-        callable $pathHandler = null,
+        ?callable $pathHandler = null,
         string $fileDir = ''
     ): array;
 
@@ -56,7 +56,7 @@ abstract class AbstractParser
     public static function parse(
         string $string,
         bool $enhancement = false,
-        callable $pathHandler = null,
+        ?callable $pathHandler = null,
         string $fileDir = ''
     ): array {
         if (strlen($string) < 256 && is_file($string)) {
@@ -78,7 +78,7 @@ abstract class AbstractParser
     public static function parseFile(
         string $file,
         bool $enhancement = false,
-        callable $pathHandler = null,
+        ?callable $pathHandler = null,
         string $fileDir = ''
     ): array {
         if (!is_file($file)) {
@@ -102,7 +102,7 @@ abstract class AbstractParser
     public static function parseString(
         string $string,
         bool $enhancement = false,
-        callable $pathHandler = null,
+        ?callable $pathHandler = null,
         string $fileDir = ''
     ): array {
         return static::doParse($string, $enhancement, $pathHandler, $fileDir);
@@ -115,7 +115,7 @@ abstract class AbstractParser
      *
      * @return string
      */
-    protected static function getImportFile(string $value, string $fileDir, callable $pathHandler = null): string
+    protected static function getImportFile(string $value, string $fileDir, ?callable $pathHandler = null): string
     {
         // eg: 'import#other.yaml'
         $importFile = trim(substr($value, 7));

@@ -264,7 +264,7 @@ class FileTreeBuilder extends AbstractObj
      *
      * @return $this
      */
-    public function dir(string $dir, callable $intoFn = null): static
+    public function dir(string $dir, ?callable $intoFn = null): static
     {
         Assert::notBlank($dir);
         $dirPath = $this->getRealpath($dir);
@@ -322,7 +322,7 @@ class FileTreeBuilder extends AbstractObj
      *
      * @return $this
      */
-    public function into(string $dir, callable $intoFn = null): static
+    public function into(string $dir, ?callable $intoFn = null): static
     {
         Assert::notBlank($dir);
         $dirPath = $this->getRealpath($dir);
