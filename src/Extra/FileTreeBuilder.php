@@ -181,10 +181,11 @@ class FileTreeBuilder extends AbstractObj
                 return !File::isExclude($oldFile, $options['exclude']);
             },
             'beforeFn' => function (string $oldFile, string $newFile): bool {
-                $this->printMsgf('- copy file %s -> %s', $oldFile, $newFile);
+                // $this->printMsgf('- copy file %s -> %s', $oldFile, $newFile);
                 return !$this->dryRun;
             },
-            'afterFn'  => function (string $newFile) use ($options) {
+            'afterFn'  => function (string $newFile, string $oldFile) use ($options) {
+                $this->printMsgf('- copy file %s -> %s', $oldFile, $newFile);
                 if ($patterns = $options['renderOn']) {
                     $this->renderOnMatch($newFile, $patterns);
                 }

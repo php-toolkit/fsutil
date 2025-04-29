@@ -344,7 +344,7 @@ class Directory extends FileSystem
             @chmod($new, 0664); // 权限 0777
 
             if ($afterFn = $options['afterFn']) {
-                $afterFn($new);
+                $afterFn($new, $old);
             }
         }
     }
